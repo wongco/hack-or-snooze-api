@@ -1,0 +1,12 @@
+{
+  "name": "hack-or-snooze-api",
+  "version": "1.0.0",
+  "description": "API Backend for Hack-or-snooze Application",
+  "main": "server.js",
+  "scripts": {
+    "test": "jest",
+    "start": "node server.js"
+  },
+  "author": "wongco",
+  "license": "ISC"
+}
