@@ -1,6 +1,7 @@
 /** Server startup for Hack-or-snooze API */
+const { SERVER_PORT } = require('./config');
 const app = require('./app');
 
-app.listen(3000, function() {
-  console.log('Listening on 3000');
+app.listen(SERVER_PORT, function() {
+  console.log(`Listening on ${SERVER_PORT}`);
 });

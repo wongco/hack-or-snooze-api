@@ -16,11 +16,13 @@ if (process.env.NODE_ENV === 'test') {
   DB_URI = 'postgresql:///hack-or-snooze-test';
 }
 
-const BCRYPT_WORK_ROUNDS = process.env.BCRYPT_WORK_ROUNDS || 12;
+const BCRYPT_WORK_ROUNDS = +process.env.BCRYPT_WORK_ROUNDS || 12;
 const SECRET_KEY = process.env.SECRET_KEY || 'test-env-secret';
+const SERVER_PORT = +process.env.SERVER_PORT || 3000;
 
 module.exports = {
   SECRET_KEY,
   BCRYPT_WORK_ROUNDS,
-  DB_URI
+  DB_URI,
+  SERVER_PORT
 };
