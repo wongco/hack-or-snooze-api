@@ -42,16 +42,6 @@ router.post('/signup', async (req, res, next) => {
 
     return res.status(201).json({ token, user });
   } catch (error) {
-    // add error validation for exisiting user
-
-    // {
-    //   "error": {
-    //     "status": 409,
-    //     "title": "User Already Exists",
-    //     "message": "There is already a user with username 'yay'."
-    //   }
-    // }
-
     return next(error);
   }
 });

@@ -5,7 +5,8 @@ const db = require('../db');
 const bcrypt = require('bcrypt');
 
 // class models
-const APIError = require('./models/ApiError');
+const APIError = require('./ApiError');
+const Story = require('./Story');
 
 // import config
 const { BCRYPT_WORK_ROUNDS } = require('../config');
@@ -35,7 +36,7 @@ class User {
 
     // get actual favorites and stories
     const favorites = []; // TODO: update using actual story methods
-    const stories = []; // TODO: update using actual story methods
+    const stories = await Story.getUserOwnStories(username); // TODO: update using actual story methods
 
     return {
       ...userDetails,
@@ -64,8 +65,8 @@ class User {
     if (userExistsResult.rows.length > 0) {
       throw new APIError(
         `There is already a user with username '${username}'.`,
-        'User Already Exists',
-        409
+        409,
+        'User Already Exists'
       );
     }
 
