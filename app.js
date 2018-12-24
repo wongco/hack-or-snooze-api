@@ -1,17 +1,27 @@
+/** Express app for hack-or-snooze-API */
 const express = require('express');
 const app = express();
-const morgan = require('morgan');
+
+// don't provide http logging during automated tests
+if (process.env.NODE_ENV !== 'test') {
+  // middleware for logging HTTP requests to console
+  const morgan = require('morgan');
+  app.use(morgan('tiny'));
+}
+
+// class models
 const APIError = require('./models/ApiError');
 
+// routes
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
 const storiesRoutes = require('./routes/stories');
 
+// middleware for parsing req.body and json
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan('tiny'));
 
-//  router middleware
+// routing control
 app.use(authRoutes);
 app.use('/users', usersRoutes);
 app.use('/stories', storiesRoutes);

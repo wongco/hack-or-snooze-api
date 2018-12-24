@@ -37,7 +37,8 @@ router.post('/signup', async (req, res, next) => {
 
     // generate json web token and store username
     const { username } = req.body;
-    const token = jwt.sign({ username }, SECRET_KEY, JWT_OPTIONS);
+    // const token = jwt.sign({ username }, SECRET_KEY, JWT_OPTIONS);
+    const token = jwt.sign({ username }, SECRET_KEY);
 
     return res.status(201).json({ token, user });
   } catch (error) {
