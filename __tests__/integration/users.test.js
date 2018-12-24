@@ -55,29 +55,26 @@ describe('GET /users', async () => {
     expect(error.status).toBe(400);
     expect(error).toHaveProperty('title', 'Bad Request');
   });
+});
 
-  // it('Add a user failed due to existing username', async () => {
-  //   const response = await request(app)
-  //     .post('/signup')
-  //     .send({ user: { name: 'Bobby', username: 'bob', password: '123456' } });
+describe('GET /users/:username', async () => {
+  it('Get specific user succeeded', async () => {
+    const response = await request(app).get('/users/bob');
 
-  //   const { error } = response.body;
-  //   expect(error.status).toBe(409);
-  //   expect(error).toHaveProperty(
-  //     'message',
-  //     `There is already a user with username 'bob'.`
-  //   );
-  // });
+    const { user } = response.body;
+    expect(response.statusCode).toBe(200);
+    expect(user).toHaveProperty('username', 'bob');
+    expect(user).toHaveProperty('name');
+    expect(user).toHaveProperty('favorites');
+  });
 
-  // it('Add a user failed due to invalid parameters', async () => {
-  //   const response = await request(app)
-  //     .post('/signup')
-  //     .send({ user: { name: 'Bobby', username: 'bob' } });
+  it('Failed to get non-existent user', async () => {
+    const response = await request(app).get('/users/krish');
 
-  //   const { error } = response.body;
-  //   expect(error.status).toBe(400);
-  //   expect(error).toHaveProperty('title', 'Bad Request');
-  // });
+    const { error } = response.body;
+    expect(error.status).toBe(404);
+    expect(error).toHaveProperty('title', 'User Not Found');
+  });
 });
 
 afterAll(async function() {

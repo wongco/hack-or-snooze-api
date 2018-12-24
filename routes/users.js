@@ -35,10 +35,11 @@ router.get('/', async (req, res, next) => {
  *                    updatedAt,
  *                    username } }
  */
-router.get('/:username', (req, res, next) => {
+router.get('/:username', async (req, res, next) => {
   try {
     const { username } = req.params;
-    return res.json({ message: `User ${username} requested!` });
+    const user = await User.getUser(username);
+    return res.json({ user });
   } catch (error) {
     return next(error);
   }
