@@ -6,6 +6,12 @@ const router = new express.Router();
 const User = require('../models/User');
 const APIError = require('../models/ApiError');
 
+// import helper
+const validateJSONSchema = require('../helpers/validateJSONSchema');
+
+// json validation
+const userPatchSchema = require('../schemas/userPatchSchema.json');
+
 /** Base Route: /users */
 
 /* Authenticated Route - Token Required */
@@ -57,6 +63,13 @@ router.get('/:username', async (req, res, next) => {
  *                    username } }
  */
 router.patch('/:username', async (req, res, next) => {
+  try {
+    // if schema is invalid, throw error
+    validateJSONSchema(req.body, userPatchSchema);
+  } catch (err) {
+    return next(err);
+  }
+
   try {
     const { username } = req.params;
     const user = await User.patchUser(username, req.body.user);

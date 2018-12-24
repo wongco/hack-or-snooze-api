@@ -144,6 +144,41 @@ describe('getAllUsers method', async () => {
   });
 });
 
+describe('patchUser method', async () => {
+  it('successfully updates user information', async () => {
+    const user = await User.patchUser('bob', {
+      name: 'bobby',
+      password: 'abcdef'
+    });
+
+    expect(user).toHaveProperty('username', 'bob');
+    expect(user).toHaveProperty('name', 'bobby');
+    expect(user).not.toHaveProperty('password');
+  });
+
+  it('successfully update partial user information', async () => {
+    const user = await User.patchUser('bob', {
+      name: 'bobby'
+    });
+
+    expect(user).toHaveProperty('username', 'bob');
+    expect(user).toHaveProperty('name', 'bobby');
+    expect(user).not.toHaveProperty('password');
+  });
+
+  it('fail to update details for non-existent user', async () => {
+    try {
+      await User.patchUser('jeremy', {
+        name: 'bobby',
+        password: 'abcdef'
+      });
+    } catch (error) {
+      expect(error.status).toBe(404);
+      expect(error).toHaveProperty('title', 'User Not Found');
+    }
+  });
+});
+
 afterAll(async function() {
   // close db connection
   await db.end();

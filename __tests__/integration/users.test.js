@@ -77,6 +77,70 @@ describe('GET /users/:username', async () => {
   });
 });
 
+describe('PATCH /users/:username', async () => {
+  it('Updating specific user succeeded', async () => {
+    const response = await request(app)
+      .patch('/users/bob')
+      .send({
+        user: {
+          name: 'bobbobman',
+          password: 'abcdef'
+        }
+      });
+
+    const { user } = response.body;
+    expect(response.statusCode).toBe(200);
+    expect(user).toHaveProperty('username', 'bob');
+    expect(user).toHaveProperty('name', 'bobbobman');
+    expect(user).toHaveProperty('favorites');
+  });
+
+  it('Updating partial user details succeeded', async () => {
+    const response = await request(app)
+      .patch('/users/bob')
+      .send({
+        user: {
+          name: 'bobbobman'
+        }
+      });
+
+    const { user } = response.body;
+    expect(response.statusCode).toBe(200);
+    expect(user).toHaveProperty('username', 'bob');
+    expect(user).toHaveProperty('name', 'bobbobman');
+    expect(user).toHaveProperty('favorites');
+  });
+
+  it('Failed to update non-existing user', async () => {
+    const response = await request(app)
+      .patch('/users/krish')
+      .send({
+        user: {
+          name: 'bobbobman'
+        }
+      });
+
+    const { error } = response.body;
+    expect(error.status).toBe(404);
+    expect(error).toHaveProperty('title', 'User Not Found');
+  });
+
+  it('Failed to update due to bad parameter', async () => {
+    const response = await request(app)
+      .patch('/users/bob')
+      .send({
+        user: {
+          name: 'bobbobman',
+          cookie: 'delicious'
+        }
+      });
+
+    const { error } = response.body;
+    expect(error.status).toBe(400);
+    expect(error).toHaveProperty('title', 'Bad Request');
+  });
+});
+
 afterAll(async function() {
   // close db connection
   await db.end();

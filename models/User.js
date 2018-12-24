@@ -13,17 +13,17 @@ const validateSkipLimit = require('../helpers/validateSkipLimit');
 const sqlForPartialUpdate = require('../helpers/partialUpdate');
 
 // import config
-const { BCRYPT_WORK_ROUNDS, USERS_LIST_LIMIT } = require('../config');
+const { BCRYPT_WORK_ROUNDS } = require('../config');
 
 /** User on the site */
 
 class User {
   /** addUser - adds a user to the database
-   * @typedef {Object} user
-   * @property {string} username
-   * @property {string} name
-   * @property {string} password
-   * @return { Promise <{ user: username, name, createdAt, updatedAt, stories, favorites }>}
+   * @property {object} user
+   * @property {string} user.username
+   * @property {string} user.name
+   * @property {string} user.password
+   * @return {Promise <{ user: username, name, createdAt, updatedAt, stories, favorites}>}
    * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
    */
   static async addUser({ name, username, password }) {
@@ -68,7 +68,7 @@ class User {
 
   /** getUserDbInfo - gets a specific user's info from the database
    * @param {string} username
-   * @return { Promise <{ username, name, createdAt, updatedAt }>}
+   * @return {Promise <{username, name, createdAt, updatedAt}>}
    */
   static async getUserDbInfo(username) {
     const result = await db.query(
@@ -86,7 +86,7 @@ class User {
 
   /** getUser - gets a specific user's info formatted nicely for JONS resp.
    * @param {string} username
-   * @return { Promise <{ username, name, createdAt, updatedAt, stories, favorites }>}
+   * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
    * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
    */
   static async getUser(username) {
@@ -133,10 +133,10 @@ class User {
   }
 
   /** getAllUsers - returns list of all users in database
-   * @typedef {Object} queryString
-   * @property {integer} skip
-   * @property {integer} limit
-   * @returns { Promise <[ { username, name, createdAt, updatedAt }, ...]>}
+   * @property {object} queryString
+   * @property {integer} queryString.skip
+   * @property {integer} queryString.limit
+   * @returns {Promise <[ { username, name, createdAt, updatedAt }, ...]>}
    */
   static async getAllUsers(reqDetails) {
     // validates skip and limit, throws error if invalid
@@ -161,12 +161,12 @@ class User {
     return users;
   }
 
-  /** patchUser - updates specific user in database
+  /** @description patchUser - updates specific user in database
    * @param {string} username
-   * @typedef {Object} userUpdateDetails
-   * @property {string} name
-   * @property {string} password
-   * @return { Promise <{ username, name, createdAt, updatedAt, stories, favorites }>}
+   * @property {object} userUpdateDetails
+   * @property {string} userUpdateDetails.name
+   * @property {string} userUpdateDetails.password
+   * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
    * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
    */
   static async patchUser(username, userUpdateDetails) {
