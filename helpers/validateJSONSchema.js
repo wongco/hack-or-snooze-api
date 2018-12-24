@@ -16,6 +16,8 @@ function validateJSONSchema(reqData, schema) {
     const error = new APIError(message, status, title);
     throw error;
   }
+
+  return true;
 }
 
 module.exports = validateJSONSchema;

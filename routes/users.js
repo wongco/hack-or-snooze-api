@@ -1,17 +1,24 @@
+// npm modules
 const express = require('express');
 const router = new express.Router();
+
+// class models
+const User = require('../models/User');
+const APIError = require('../models/ApiError');
 
 /** Base Route: /users */
 
 /* Authenticated Route - Token Required */
 /** GET - /users
  * desc: get a list of users
- * input: token (query string)
+ * input: token (header), optional - { skip, limit }
  * output: { users: [{ createdAt, name, updatedAt, username}, ...]}
  */
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
+  // console.log(req.headers);
   try {
-    return res.json({ message: 'all users requested!' });
+    const users = await User.getAllUsers(req.query);
+    return res.json({ users });
   } catch (error) {
     return next(error);
   }
@@ -20,7 +27,7 @@ router.get('/', (req, res, next) => {
 /* Authenticated Route - Token Required */
 /** GET - /users/:username
  * desc: get a user
- * input: token (query string)
+ * input: token (header)
  * output: { user: {  createdAt,
  *                    favorites: [storyDetails]
  *                    name,
@@ -40,7 +47,7 @@ router.get('/:username', (req, res, next) => {
 /* Authorized Route - Token Required, Correct User */
 /** PATCH - /users/:username
  * desc: update a user
- * input: { token, user: { name, password } }
+ * input: token (header),  { user: { name, password } }
  * output: { user: {  createdAt,
  *                    favorites: [storyDetails]
  *                    name,
@@ -60,7 +67,7 @@ router.patch('/:username', (req, res, next) => {
 /* Authorized Route - Token Required, Correct User */
 /** DELETE - /users/:username
  * desc: delete a user
- * input: { token }
+ * input: token (header)
  * output: { message: "User ${username} successfully deleted!",
  *           user: {  createdAt,
  *                    favorites: [storyDetails]
@@ -81,7 +88,7 @@ router.delete('/:username', (req, res, next) => {
 /* Authorized Route - Token Required, Correct User */
 /** POST - /users/:username/favorites/:storyId
  * desc: add a new user favorite
- * input: { token }
+ * input: token (header)
  * output: { message: "Favorite Added!",
  *           user: {  createdAt,
  *                    favorites: [storyDetails]
@@ -104,7 +111,7 @@ router.post('/:username/favorites/:storyId', (req, res, next) => {
 /* Authorized Route - Token Required, Correct User */
 /** DELETE - /users/:username/favorites/:storyId
  * desc: delete a user favorite
- * input: { token }
+ * input: token (header)
  * output: { message: "Favorite Removed!",
  *           user: {  createdAt,
  *                    favorites: [storyDetails]

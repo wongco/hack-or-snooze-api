@@ -19,10 +19,14 @@ if (process.env.NODE_ENV === 'test') {
 const BCRYPT_WORK_ROUNDS = +process.env.BCRYPT_WORK_ROUNDS || 12;
 const SECRET_KEY = process.env.SECRET_KEY || 'test-env-secret';
 const SERVER_PORT = +process.env.SERVER_PORT || 3000;
+const USERS_LIST_LIMIT = +process.env.USERS_LIST_LIMIT || 25;
+const STORIES_LIST_LIMIT = +process.env.STORIES_LIST_LIMIT || 25;
 
 module.exports = {
   SECRET_KEY,
   BCRYPT_WORK_ROUNDS,
   DB_URI,
-  SERVER_PORT
+  SERVER_PORT,
+  USERS_LIST_LIMIT,
+  STORIES_LIST_LIMIT
 };

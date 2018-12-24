@@ -29,8 +29,8 @@ CREATE TABLE favorites
   PRIMARY KEY(username, storyId)
 );
 
-INSERT INTO users VALUES ('yay2', 'PiratesArrrrGreat2', '654321');
+-- INSERT INTO users VALUES ('yay2', 'PiratesArrrrGreat2', '654321');
 
-INSERT INTO stories (title, url, author, username) VALUES ('Psy - Gentleman', 'https://www.youtube.com/watch?v=ASO_zypdnsQ&list=PLFd8oTOTa63XxaqljzpJ_PbrZj22NJ0iK', 'ArrrrPirates', 'yay2');
+INSERT INTO stories (title, url, author, username) VALUES ('Psy - Gentleman', 'https://www.youtube.com/watch?v=ASO_zypdnsQ&list=PLFd8oTOTa63XxaqljzpJ_PbrZj22NJ0iK', 'ArrrrPirates', 'bob');
 
-INSERT INTO favorites VALUES ('yay2', 1);
+INSERT INTO favorites VALUES ('bob', 1);

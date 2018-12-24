@@ -14,6 +14,12 @@ beforeEach(async () => {
     name: 'Bobby',
     password: '123456'
   });
+
+  await User.addUser({
+    username: 'jas',
+    name: 'Jason',
+    password: '123456'
+  });
 });
 
 describe('addUser method', async () => {
@@ -107,6 +113,33 @@ describe('checkValidCreds method', async () => {
       await User.checkValidCreds('bob', 'abcdef');
     } catch (error) {
       expect(error).toHaveProperty('message', 'Invalid Password.');
+    }
+  });
+});
+
+describe('getAllUsers method', async () => {
+  it('successfully gets all users with params specified', async () => {
+    const users = await User.getAllUsers({
+      skip: '1',
+      limit: '25'
+    });
+
+    expect(users).toHaveLength(1);
+  });
+
+  it('successfully gets all users with no query string params', async () => {
+    const users = await User.getAllUsers({});
+    expect(users).toHaveLength(2);
+  });
+
+  it('fails due to invalid query string parameters', async () => {
+    try {
+      await User.getAllUsers({
+        skip: '0',
+        limit: '100'
+      });
+    } catch (error) {
+      expect(error).toHaveProperty('message');
     }
   });
 });

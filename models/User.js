@@ -8,8 +8,11 @@ const bcrypt = require('bcrypt');
 const APIError = require('./ApiError');
 const Story = require('./Story');
 
+// helper function
+const validateSkipLimit = require('../helpers/validateSkipLimit');
+
 // import config
-const { BCRYPT_WORK_ROUNDS } = require('../config');
+const { BCRYPT_WORK_ROUNDS, USERS_LIST_LIMIT } = require('../config');
 
 /** User on the site */
 
@@ -126,6 +129,35 @@ class User {
     }
 
     return true;
+  }
+
+  /** getAllUsers - returns list of all users in database
+   * @typedef {Object} queryString
+   * @property {integer} skip
+   * @property {integer} limit
+   * @returns { Promise <[ { username, name, createdAt, updatedAt }, ...]>}
+   */
+  static async getAllUsers(reqDetails) {
+    // validates skip and limit, throws error if invalid
+    validateSkipLimit(reqDetails);
+
+    const { skip, limit } = reqDetails;
+    const result = await db.query(
+      `SELECT username, name, createdat, updatedat FROM users OFFSET $1 LIMIT $2`,
+      [skip, limit]
+    );
+
+    // rename columns to match formatted output
+    const users = result.rows.map(userDbDetail => {
+      const { createdat, updatedat, ...userDetails } = userDbDetail;
+      return {
+        ...userDetails,
+        createdAt: createdat,
+        updatedAt: updatedat
+      };
+    });
+
+    return users;
   }
 }
 

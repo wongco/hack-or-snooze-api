@@ -18,7 +18,7 @@ router.get('/', (req, res, next) => {
 /* Authenticated Route - Token Required */
 /** POST - /stories
  * desc: Create a New Story
- * input: { token, story: {username, author, title, url} }
+ * input: token (header), { story: {username, author, title, url} }
  */
 router.post('/', (req, res, next) => {
   try {
@@ -46,7 +46,7 @@ router.get('/:storyId', (req, res, next) => {
 /* Authorized Route - Token Required, Correct User */
 /** PATCH - /stories/:storyId
  * desc: Update a Story
- * input: { token, story: { author, title, url} }
+ * input: token (header), { story: { author, title, url} }
  * output: { story: { storyDetails } }
  */
 router.patch('/:storyId', (req, res, next) => {
@@ -63,7 +63,7 @@ router.patch('/:storyId', (req, res, next) => {
 /* Authorized Route - Token Required, Correct User */
 /** DELETE - /stories/:storyId
  * desc: Delete a Story
- * input: { token }
+ * input: token (header)
  * output: { message: "Story with ${storyId} successfully deleted"
  *           story: { storyDetails } }
  */
