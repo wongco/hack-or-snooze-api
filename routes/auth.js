@@ -5,15 +5,18 @@ const jwt = require('jsonwebtoken');
 
 // class models
 const User = require('../models/User');
+const APIError = require('../models/ApiError');
 
 // import config info
 const { SECRET_KEY } = require('../config');
-const JWT_OPTIONS = { expiresIn: 60 * 60 * 24 }; // 1 day expiration
+// const JWT_OPTIONS = { expiresIn: 60 * 60 * 24 }; // 1 day expiration
+const JWT_OPTIONS = {}; // No Expiration - Testing Only TODO
 
 // import helper
 const validateJSONSchema = require('../helpers/validateJSONSchema');
 
 // json validation
+const signupPostSchema = require('../schemas/signupPostSchema.json');
 const loginPostSchema = require('../schemas/loginPostSchema.json');
 
 /** base route - auth resources */
@@ -26,7 +29,7 @@ const loginPostSchema = require('../schemas/loginPostSchema.json');
 router.post('/signup', async (req, res, next) => {
   try {
     // if schema is invalid, throw error
-    validateJSONSchema(req.body, loginPostSchema);
+    validateJSONSchema(req.body, signupPostSchema);
   } catch (err) {
     return next(err);
   }
@@ -37,8 +40,7 @@ router.post('/signup', async (req, res, next) => {
 
     // generate json web token and store username
     const { username } = req.body;
-    // const token = jwt.sign({ username }, SECRET_KEY, JWT_OPTIONS);
-    const token = jwt.sign({ username }, SECRET_KEY);
+    const token = jwt.sign({ username }, SECRET_KEY, JWT_OPTIONS);
 
     return res.status(201).json({ token, user });
   } catch (error) {
@@ -51,11 +53,29 @@ router.post('/signup', async (req, res, next) => {
  * input: { user: username, password }
  * output: { token, user: {userDetails} }
  */
-router.post('/login', (req, res, next) => {
+router.post('/login', async (req, res, next) => {
   try {
-    console.log(req.headers);
-    return res.json({ message: 'login reached!' });
-  } catch (error) {
+    // if schema is invalid, throw error
+    validateJSONSchema(req.body, loginPostSchema);
+  } catch (err) {
+    return next(err);
+  }
+
+  try {
+    const { username, password } = req.body.user;
+
+    // check if login is valid, else throws errors
+    await User.checkValidCreds(username, password);
+    const user = await User.getUser(username);
+    const token = jwt.sign({ username }, SECRET_KEY, JWT_OPTIONS);
+
+    return res.json({ token, user });
+  } catch (err) {
+    const error = new APIError(
+      'Invalid login credentials.',
+      401,
+      'Unauthorized'
+    );
     return next(error);
   }
 });

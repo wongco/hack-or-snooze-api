@@ -15,9 +15,6 @@ class Story {
    * @return { Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
    */
   static async getUserOwnStories(username) {
-    // check if user exists, else throw error
-    await User.getUser(username);
-
     const result = await db.query('SELECT * FROM stories where username = $1', [
       username
     ]);

@@ -14,39 +14,6 @@ const { BCRYPT_WORK_ROUNDS } = require('../config');
 /** User on the site */
 
 class User {
-  /** getUser - gets a specific user from the database
-   * @param {string} username
-   * @return { Promise <{ user: username, name, createdAt, updatedAt, stories, favorites }>}
-   * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
-   */
-  static async getUser(username) {
-    const result = await db.query(`SELECT * FROM users WHERE username = $1`, [
-      username
-    ]);
-
-    if (result.rows.length === 0) {
-      throw new APIError(`No user '${username}' found.`, 'User Not Found', 404);
-    }
-
-    // single user row
-    const user = result.rows[0];
-
-    // deconstruct data for formatting
-    const { createdat, updatedat, ...userDetails } = user;
-
-    // get actual favorites and stories
-    const favorites = []; // TODO: update using actual story methods
-    const stories = await Story.getUserOwnStories(username); // TODO: update using actual story methods
-
-    return {
-      ...userDetails,
-      createdAt: createdat,
-      updatedAt: updatedat,
-      favorites,
-      stories
-    };
-  }
-
   /** addUser - adds a user to the database
    * @typedef {Object} user
    * @property {string} username
@@ -93,6 +60,72 @@ class User {
       favorites,
       stories
     };
+  }
+
+  /** getUserDbInfo - gets a specific user's info from the database
+   * @param {string} username
+   * @return { Promise <{ username, name, createdAt, updatedAt }>}
+   */
+  static async getUserDbInfo(username) {
+    const result = await db.query(
+      `SELECT username, name, createdAt, updatedAt FROM users WHERE username = $1`,
+      [username]
+    );
+
+    // check if user exists, else throw error
+    if (result.rows.length === 0) {
+      throw new APIError(`No user '${username}' found.`, 404, 'User Not Found');
+    }
+
+    return result.rows[0];
+  }
+
+  /** getUser - gets a specific user's info formatted nicely for JONS resp.
+   * @param {string} username
+   * @return { Promise <{ username, name, createdAt, updatedAt, stories, favorites }>}
+   * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
+   */
+  static async getUser(username) {
+    // check if user exists
+    const user = await User.getUserDbInfo(username);
+
+    // deconstruct data for formatting
+    const { createdat, updatedat, ...userDetails } = user;
+
+    // get actual favorites and stories
+    const favorites = []; // TODO: update using actual story methods
+    const stories = await Story.getUserOwnStories(username); // TODO: update using actual story methods
+
+    return {
+      ...userDetails,
+      createdAt: createdat,
+      updatedAt: updatedat,
+      favorites,
+      stories
+    };
+  }
+
+  /** checkValidCreds - checks if a user's credentials are valid
+   * @param {string} username
+   * @param {string} inputPassword
+   */
+  static async checkValidCreds(username, inputPassword) {
+    // check if user exists, else throw error
+    await User.getUserDbInfo(username);
+
+    // obtain user pw hash for comparision
+    const queryResult = await db.query(
+      `SELECT password FROM users WHERE username = $1`,
+      [username]
+    );
+    const { password } = queryResult.rows[0];
+
+    const isValid = await bcrypt.compare(inputPassword, password);
+    if (!isValid) {
+      throw new Error('Invalid Password.');
+    }
+
+    return true;
   }
 }
 

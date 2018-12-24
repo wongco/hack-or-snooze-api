@@ -55,6 +55,62 @@ describe('addUser method', async () => {
   });
 });
 
+describe('getUserDbInfo method', async () => {
+  it('gets a users info from database successfully', async () => {
+    const user = await User.getUserDbInfo('bob');
+
+    expect(user).toHaveProperty('username', 'bob');
+    expect(user).not.toHaveProperty('password');
+  });
+
+  it('failed due to non-existing username', async () => {
+    try {
+      await User.getUserDbInfo('jim');
+    } catch (error) {
+      expect(error).toHaveProperty('title', 'User Not Found');
+    }
+  });
+});
+
+describe('getUser method', async () => {
+  it('gets a users formatted info successfully', async () => {
+    const user = await User.getUser('bob');
+    expect(user).toHaveProperty('username', 'bob');
+    expect(user).not.toHaveProperty('password');
+  });
+
+  it('failed due to non-existing username', async () => {
+    try {
+      await User.getUser('jim');
+    } catch (error) {
+      expect(error).toHaveProperty('title', 'User Not Found');
+    }
+  });
+});
+
+describe('checkValidCreds method', async () => {
+  it('successfully verifies user credentials', async () => {
+    const isValid = await User.checkValidCreds('bob', '123456');
+    expect(isValid).toBe(true);
+  });
+
+  it('fails due to incorrect username', async () => {
+    try {
+      await User.checkValidCreds('jim', '123456');
+    } catch (error) {
+      expect(error).toHaveProperty('title', 'User Not Found');
+    }
+  });
+
+  it('fails due to incorrect password', async () => {
+    try {
+      await User.checkValidCreds('bob', 'abcdef');
+    } catch (error) {
+      expect(error).toHaveProperty('message', 'Invalid Password.');
+    }
+  });
+});
+
 afterAll(async function() {
   // close db connection
   await db.end();
