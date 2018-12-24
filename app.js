@@ -18,7 +18,10 @@ app.use('/stories', storiesRoutes);
 
 /** 404 handler */
 app.use(function(req, res, next) {
-  const err = new Error('Resource Not Found');
+  const err = new APIError(
+    `${req.url} is not a valid path to a Hack-Or-Snooze API resource.`
+  );
+  err.title = 'Resource Not Found';
   err.status = 404;
 
   // pass the error to the next piece of middleware
@@ -29,7 +32,7 @@ app.use(function(req, res, next) {
 app.use(function(err, req, res, next) {
   // all errors that get to here get coerced into API Errors
   if (!(err instanceof APIError)) {
-    err = new APIError(err.message, err.status);
+    err = new APIError(err.message, err.status, err.title);
   }
   return res.status(err.status).json(err);
 });

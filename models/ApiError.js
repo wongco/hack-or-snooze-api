@@ -1,7 +1,12 @@
 class APIError extends Error {
-  constructor(message = 'Internal Server Error', status = 500) {
+  constructor(
+    message = 'Internal Server Error',
+    status = 500,
+    title = 'Error'
+  ) {
     super(message);
     this.status = status;
+    this.title = title;
   }
 
   /*
@@ -11,8 +16,9 @@ class APIError extends Error {
   toJSON() {
     return {
       error: {
-        message: this.message,
-        status: this.status
+        status: this.status,
+        title: this.title,
+        message: this.message
       }
     };
   }
