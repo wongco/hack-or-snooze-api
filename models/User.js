@@ -10,6 +10,7 @@ const Story = require('./Story');
 
 // helper function
 const validateSkipLimit = require('../helpers/validateSkipLimit');
+const sqlForPartialUpdate = require('../helpers/partialUpdate');
 
 // import config
 const { BCRYPT_WORK_ROUNDS, USERS_LIST_LIMIT } = require('../config');
@@ -158,6 +159,45 @@ class User {
     });
 
     return users;
+  }
+
+  /** patchUser - updates specific user in database
+   * @param {string} username
+   * @typedef {Object} userUpdateDetails
+   * @property {string} name
+   * @property {string} password
+   * @return { Promise <{ username, name, createdAt, updatedAt, stories, favorites }>}
+   * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
+   */
+  static async patchUser(username, userUpdateDetails) {
+    // check if user exists, else throw error
+    await User.getUserDbInfo(username);
+
+    // add timestamp to be updated
+    userUpdateDetails.updatedat = new Date();
+
+    // if password change is requested, hash password
+    if (userUpdateDetails.password) {
+      userUpdateDetails.password = await bcrypt.hash(
+        userUpdateDetails.password,
+        BCRYPT_WORK_ROUNDS
+      );
+    }
+
+    // generate sql commands for update
+    const { query, values } = sqlForPartialUpdate(
+      'users',
+      userUpdateDetails,
+      'username',
+      username
+    );
+
+    // update database
+    await db.query(query, values);
+
+    // get updated userDetails
+    const user = await User.getUser(username);
+    return user;
   }
 }
 

@@ -56,10 +56,11 @@ router.get('/:username', async (req, res, next) => {
  *                    updatedAt,
  *                    username } }
  */
-router.patch('/:username', (req, res, next) => {
+router.patch('/:username', async (req, res, next) => {
   try {
     const { username } = req.params;
-    return res.json({ message: `User ${username} patched!` });
+    const user = await User.patchUser(username, req.body.user);
+    return res.json({ user });
   } catch (error) {
     return next(error);
   }
