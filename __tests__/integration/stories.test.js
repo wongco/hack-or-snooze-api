@@ -207,20 +207,40 @@ describe('PATCH /stories/:storyId', async () => {
     expect(error.status).toBe(400);
     expect(error).toHaveProperty('title', 'Bad Request');
   });
+});
 
-  // it('Failed to get story due to non-existing storyId', async () => {
-  //   const response = await request(app).get(`/stories/100000`);
-  //   const { error } = response.body;
-  //   expect(error.status).toBe(404);
-  //   expect(error).toHaveProperty('title', 'Story Not Found');
-  // });
+describe('DELETE /stories/:storyId', async () => {
+  it('Deleted specific story successfully', async () => {
+    const response = await request(app).get('/stories');
+    const { stories } = response.body;
+    const storyId = stories[0].storyId;
 
-  // it('Failed to get story due to invalid storyId input', async () => {
-  //   const response = await request(app).get(`/stories/abc`);
-  //   const { error } = response.body;
-  //   expect(error.status).toBe(400);
-  //   expect(error).toHaveProperty('title', 'Invalid StoryId');
-  // });
+    const response2 = await request(app).delete(`/stories/${storyId}`);
+    const { story } = response2.body;
+    expect(response2.statusCode).toBe(200);
+    expect(story).toHaveProperty('storyId', storyId);
+    expect(story).toHaveProperty('title', 'How to eat cookies.');
+
+    // check story no longer exists
+    const response3 = await request(app).get(`/stories/${storyId}`);
+    const { error } = response3.body;
+    expect(error.status).toBe(404);
+    expect(error).toHaveProperty('title', 'Story Not Found');
+  });
+
+  it('Failed to delete non-existent storyId', async () => {
+    const response = await request(app).delete('/stories/1000000');
+    const { error } = response.body;
+    expect(response.statusCode).toBe(404);
+    expect(error).toHaveProperty('title', 'Story Not Found');
+  });
+
+  it('Failed to delete due to invalid storyID', async () => {
+    const response = await request(app).delete('/stories/abc');
+    const { error } = response.body;
+    expect(error.status).toBe(400);
+    expect(error).toHaveProperty('title', 'Invalid StoryId');
+  });
 });
 
 afterAll(async function() {

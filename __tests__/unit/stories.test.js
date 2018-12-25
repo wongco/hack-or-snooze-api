@@ -241,6 +241,27 @@ describe('patchStory method', async () => {
   });
 });
 
+describe('deleteStory method', async () => {
+  it('deleting a specific story succeeded', async () => {
+    const stories = await Story.getStories({});
+    const storyId = stories[0].storyId;
+
+    const story = await Story.deleteStory(storyId);
+
+    expect(story).toHaveProperty('username', 'bob');
+    expect(story).toHaveProperty('title', 'How to eat cookies.');
+    expect(story).toHaveProperty('storyId', storyId);
+  });
+
+  it('failed due to non-exisiting storyId', async () => {
+    try {
+      await Story.deleteStory(100000);
+    } catch (error) {
+      expect(error).toHaveProperty('title', 'Story Not Found');
+    }
+  });
+});
+
 afterAll(async function() {
   // close db connection
   await db.end();

@@ -100,8 +100,10 @@ router.patch('/:storyId', ensureValidStoryId, async (req, res, next) => {
 router.delete('/:storyId', ensureValidStoryId, async (req, res, next) => {
   try {
     const { storyId } = req.params;
+    const story = await Story.deleteStory(storyId);
     return res.json({
-      message: `Story with id: ${storyId} was deleted.`
+      message: `Story with ID '${storyId}' successfully deleted.`,
+      story
     });
   } catch (error) {
     return next(error);

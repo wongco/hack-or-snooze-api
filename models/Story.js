@@ -155,6 +155,20 @@ class Story {
     const story = await Story.getStory(storyId);
     return story;
   }
+
+  /** deleteStory - update a specific story's info JSON resp.
+   * @param {interger} storyId
+   * @return { Promise <{ storyId, title, author, url, createdAt, updatedAt, username }>}
+   */
+  static async deleteStory(storyId) {
+    // check if story exists, else throw error
+    await Story.getStoryDbInfo(storyId);
+
+    // grab story details before deleting
+    const story = await Story.getStory(storyId);
+    await db.query('DELETE FROM stories WHERE storyid = $1', [storyId]);
+    return story;
+  }
 }
 
 module.exports = Story;
