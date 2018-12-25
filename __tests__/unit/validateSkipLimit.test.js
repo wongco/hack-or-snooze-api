@@ -1,6 +1,9 @@
 /** jest tests for helper function */
 process.env.NODE_ENV = 'test';
 
+// import config
+const { USERS_LIST_LIMIT } = require('../../config');
+
 // import helper function
 const validateSkipLimit = require('../../helpers/validateSkipLimit');
 
@@ -10,7 +13,7 @@ describe('validateSkipLimit helper function', () => {
       skip: '0',
       limit: '25'
     };
-    validateSkipLimit(reqDetails);
+    validateSkipLimit(reqDetails, USERS_LIST_LIMIT);
     expect(reqDetails).toHaveProperty('skip', 0);
     expect(reqDetails).toHaveProperty('limit', 25);
   });
@@ -19,7 +22,7 @@ describe('validateSkipLimit helper function', () => {
     const reqDetails = {
       skip: '3'
     };
-    validateSkipLimit(reqDetails);
+    validateSkipLimit(reqDetails, USERS_LIST_LIMIT);
     expect(reqDetails).toHaveProperty('skip', 3);
     expect(reqDetails).toHaveProperty('limit', 25);
   });
@@ -28,14 +31,14 @@ describe('validateSkipLimit helper function', () => {
     const reqDetails = {
       limit: '3'
     };
-    validateSkipLimit(reqDetails);
+    validateSkipLimit(reqDetails, USERS_LIST_LIMIT);
     expect(reqDetails).toHaveProperty('skip', 0);
     expect(reqDetails).toHaveProperty('limit', 3);
   });
 
   it('validates successfully when neither value is provided', () => {
     const reqDetails = {};
-    validateSkipLimit(reqDetails);
+    validateSkipLimit(reqDetails, USERS_LIST_LIMIT);
     expect(reqDetails).toHaveProperty('skip', 0);
     expect(reqDetails).toHaveProperty('limit', 25);
   });
@@ -45,7 +48,7 @@ describe('validateSkipLimit helper function', () => {
       skip: '0',
       limit: ''
     };
-    validateSkipLimit(reqDetails);
+    validateSkipLimit(reqDetails, USERS_LIST_LIMIT);
     expect(reqDetails).toHaveProperty('skip', 0);
     expect(reqDetails).toHaveProperty('limit', 25);
   });
@@ -55,7 +58,7 @@ describe('validateSkipLimit helper function', () => {
       skip: '',
       limit: '23'
     };
-    validateSkipLimit(reqDetails);
+    validateSkipLimit(reqDetails, USERS_LIST_LIMIT);
     expect(reqDetails).toHaveProperty('skip', 0);
     expect(reqDetails).toHaveProperty('limit', 23);
   });
@@ -65,7 +68,7 @@ describe('validateSkipLimit helper function', () => {
       skip: '0',
       limit: '23.4'
     };
-    validateSkipLimit(reqDetails);
+    validateSkipLimit(reqDetails, USERS_LIST_LIMIT);
     expect(reqDetails).toHaveProperty('skip', 0);
     expect(reqDetails).toHaveProperty('limit', 23);
   });
@@ -75,7 +78,7 @@ describe('validateSkipLimit helper function', () => {
       skip: '2.5',
       limit: '23'
     };
-    validateSkipLimit(reqDetails);
+    validateSkipLimit(reqDetails, USERS_LIST_LIMIT);
     expect(reqDetails).toHaveProperty('skip', 2);
     expect(reqDetails).toHaveProperty('limit', 23);
   });
@@ -86,7 +89,7 @@ describe('validateSkipLimit helper function', () => {
       limit: '23'
     };
     try {
-      validateSkipLimit(reqDetails);
+      validateSkipLimit(reqDetails, USERS_LIST_LIMIT);
     } catch (error) {
       expect(error).toHaveProperty('message');
     }
@@ -98,7 +101,7 @@ describe('validateSkipLimit helper function', () => {
       limit: 'abc'
     };
     try {
-      validateSkipLimit(reqDetails);
+      validateSkipLimit(reqDetails, USERS_LIST_LIMIT);
     } catch (error) {
       expect(error).toHaveProperty('message');
     }
@@ -110,7 +113,7 @@ describe('validateSkipLimit helper function', () => {
       limit: '25'
     };
     try {
-      validateSkipLimit(reqDetails);
+      validateSkipLimit(reqDetails, USERS_LIST_LIMIT);
     } catch (error) {
       expect(error).toHaveProperty('message');
     }
@@ -122,7 +125,7 @@ describe('validateSkipLimit helper function', () => {
       limit: '100'
     };
     try {
-      validateSkipLimit(reqDetails);
+      validateSkipLimit(reqDetails, USERS_LIST_LIMIT);
     } catch (error) {
       expect(error).toHaveProperty('message');
     }

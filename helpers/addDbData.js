@@ -1,6 +1,6 @@
 const db = require('../db');
 const User = require('../models/User');
-// const Story = require('../models/Story');
+const Story = require('../models/Story');
 
 // control function to clean up db and add new data
 async function setUp() {
@@ -70,7 +70,35 @@ async function usersSetup() {
 }
 
 // setup stories on DB
-async function storiesSetup() {}
+async function storiesSetup() {
+  await Story.addStory({
+    title: 'How to eat cookies.',
+    url: 'http://www.goodcookies.com',
+    author: 'Bobby',
+    username: 'bob'
+  });
+
+  await Story.addStory({
+    title: 'Badminton? What is that?',
+    url: 'http://www.goodsports.com',
+    author: 'Jimmy',
+    username: 'jim'
+  });
+
+  await Story.addStory({
+    title: 'Why Do i try?',
+    url: 'http://www.inspiration.com',
+    author: 'Karen',
+    username: 'karkar'
+  });
+
+  await Story.addStory({
+    title: 'Where did the dogs go?',
+    url: 'http://www.urbancuriosity.com',
+    author: 'Bobby',
+    username: 'bob'
+  });
+}
 
 // setup favorites on DB
 async function favoritesSetup() {}

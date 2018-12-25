@@ -13,7 +13,7 @@ const validateSkipLimit = require('../helpers/validateSkipLimit');
 const sqlForPartialUpdate = require('../helpers/partialUpdate');
 
 // import config
-const { BCRYPT_WORK_ROUNDS } = require('../config');
+const { BCRYPT_WORK_ROUNDS, USERS_LIST_LIMIT } = require('../config');
 
 /** User on the site */
 
@@ -132,15 +132,15 @@ class User {
     return true;
   }
 
-  /** getAllUsers - returns list of all users in database
-   * @property {object} queryString
-   * @property {integer} queryString.skip
-   * @property {integer} queryString.limit
+  /** getUsers - returns list of all users in db filtered by criteria.
+   * @property {object} reqDetails
+   * @property {integer} reqDetails.skip
+   * @property {integer} reqDetails.limit
    * @returns {Promise <[ { username, name, createdAt, updatedAt }, ...]>}
    */
-  static async getAllUsers(reqDetails) {
+  static async getUsers(reqDetails) {
     // validates skip and limit, throws error if invalid
-    validateSkipLimit(reqDetails);
+    validateSkipLimit(reqDetails, USERS_LIST_LIMIT);
 
     const { skip, limit } = reqDetails;
     const result = await db.query(

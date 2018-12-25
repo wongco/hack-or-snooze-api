@@ -1,15 +1,23 @@
 const express = require('express');
 const router = new express.Router();
 
+// class models
+const Story = require('../models/Story');
+
+// import helper
+const validateJSONSchema = require('../helpers/validateJSONSchema');
+
 /** Base Route: /stories */
 
 /** GET - /stories
  * desc: Get a List of Stories
+ * input: optional - { skip, limit }
  * output: { stories: [{ storyDetails}, ...]}
  */
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
-    return res.json({ message: 'all stories requested!' });
+    const stories = await Story.getStories(req.query);
+    return res.json({ stories });
   } catch (error) {
     return next(error);
   }

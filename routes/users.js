@@ -23,7 +23,7 @@ const userPatchSchema = require('../schemas/userPatchSchema.json');
 router.get('/', async (req, res, next) => {
   // console.log(req.headers);
   try {
-    const users = await User.getAllUsers(req.query);
+    const users = await User.getUsers(req.query);
     return res.json({ users });
   } catch (error) {
     return next(error);

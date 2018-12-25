@@ -119,7 +119,7 @@ describe('checkValidCreds method', async () => {
 
 describe('getAllUsers method', async () => {
   it('successfully gets all users with params specified', async () => {
-    const users = await User.getAllUsers({
+    const users = await User.getUsers({
       skip: '1',
       limit: '25'
     });
@@ -128,13 +128,13 @@ describe('getAllUsers method', async () => {
   });
 
   it('successfully gets all users with no query string params', async () => {
-    const users = await User.getAllUsers({});
+    const users = await User.getUsers({});
     expect(users).toHaveLength(2);
   });
 
   it('fails due to invalid query string parameters', async () => {
     try {
-      await User.getAllUsers({
+      await User.getUsers({
         skip: '0',
         limit: '100'
       });

@@ -1,11 +1,8 @@
 // class models
 const APIError = require('../models/ApiError');
 
-// import config
-const { USERS_LIST_LIMIT } = require('../config');
-
 /** validates skip and limit input for sql searches */
-function validateSkipLimit(reqDetails) {
+function validateSkipLimit(reqDetails, limit) {
   // if skip is undefined or blank, set to default of 0
   if (reqDetails.skip === '' || reqDetails.skip === undefined) {
     reqDetails.skip = 0;
@@ -29,7 +26,7 @@ function validateSkipLimit(reqDetails) {
 
   // if limit is undfined or blank, set to default value
   if (reqDetails.limit === '' || reqDetails.limit === undefined) {
-    reqDetails.limit = USERS_LIST_LIMIT;
+    reqDetails.limit = limit;
   } else if (Number.isNaN(+reqDetails.limit)) {
     // if limit is invalid value, throw error
     throw new APIError(
@@ -37,12 +34,12 @@ function validateSkipLimit(reqDetails) {
       400,
       'Bad Request'
     );
-  } else if (+reqDetails.limit < 1 || +reqDetails.limit > USERS_LIST_LIMIT) {
+  } else if (+reqDetails.limit < 1 || +reqDetails.limit > limit) {
     // if limit is set to out of range throw error
     throw new APIError(
       `${
         reqDetails.limit
-      } is out of range for limit -- it should be between 1 and ${USERS_LIST_LIMIT}.`,
+      } is out of range for limit -- it should be between 1 and ${limit}.`,
       400,
       'Bad Request'
     );
