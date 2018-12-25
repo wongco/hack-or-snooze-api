@@ -141,6 +141,34 @@ describe('PATCH /users/:username', async () => {
   });
 });
 
+describe('DELETE /users/:username', async () => {
+  it('Deleting specific user succeeded', async () => {
+    const response = await request(app).delete('/users/bob');
+
+    const { user } = response.body;
+    expect(response.statusCode).toBe(200);
+    expect(user).toHaveProperty('username', 'bob');
+    expect(response.body).toHaveProperty(
+      'message',
+      "User 'bob' successfully deleted."
+    );
+
+    // confirm users is deleted
+    const response2 = await request(app).get('/users/bob');
+    const { error } = response2.body;
+    expect(error.status).toBe(404);
+    expect(error).toHaveProperty('title', 'User Not Found');
+  });
+
+  it('Failed to delete non-existent user', async () => {
+    const response = await request(app).delete('/users/jackrabbit');
+
+    const { error } = response.body;
+    expect(error.status).toBe(404);
+    expect(error).toHaveProperty('title', 'User Not Found');
+  });
+});
+
 afterAll(async function() {
   // close db connection
   await db.end();

@@ -173,7 +173,29 @@ describe('patchUser method', async () => {
         password: 'abcdef'
       });
     } catch (error) {
-      expect(error.status).toBe(404);
+      expect(error).toHaveProperty('title', 'User Not Found');
+    }
+  });
+});
+
+describe('deleteUser method', async () => {
+  it('successfully deleted user', async () => {
+    const user = await User.deleteUser('bob');
+
+    expect(user).toHaveProperty('username', 'bob');
+    expect(user).toHaveProperty('name', 'Bobby');
+
+    try {
+      await User.getUser('bob');
+    } catch (error) {
+      expect(error).toHaveProperty('title', 'User Not Found');
+    }
+  });
+
+  it('failed to delete non-existent user', async () => {
+    try {
+      await User.deleteUser('jack');
+    } catch (error) {
       expect(error).toHaveProperty('title', 'User Not Found');
     }
   });

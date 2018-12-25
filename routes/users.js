@@ -91,10 +91,14 @@ router.patch('/:username', async (req, res, next) => {
  *                    updatedAt,
  *                    username } }
  */
-router.delete('/:username', (req, res, next) => {
+router.delete('/:username', async (req, res, next) => {
   try {
     const { username } = req.params;
-    return res.json({ message: `User ${username} deleted!` });
+    const user = await User.deleteUser(username);
+    return res.json({
+      message: `User '${username}' successfully deleted.`,
+      user
+    });
   } catch (error) {
     return next(error);
   }

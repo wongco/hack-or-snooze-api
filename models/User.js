@@ -199,6 +199,21 @@ class User {
     const user = await User.getUser(username);
     return user;
   }
+
+  /** @description deleteUser - deletes specific user in database
+   * @param {string} username
+   * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
+   * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
+   */
+  static async deleteUser(username) {
+    // check if user exists, else throw error
+    await User.getUserDbInfo(username);
+
+    // grab user details before deleting
+    const user = await User.getUser(username);
+    await db.query('DELETE FROM users WHERE username = $1', [username]);
+    return user;
+  }
 }
 
 module.exports = User;
