@@ -57,7 +57,7 @@ class Story {
   }
 
   /** getStories - gets all stories in db filtered by criteria.
-   * @property {object} reqDetails
+   * @property {object} reqDetails (optional properties below)
    * @property {integer} reqDetails.skip
    * @property {integer} reqDetails.limit
    * @return { Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
@@ -106,7 +106,7 @@ class Story {
     return result.rows[0];
   }
 
-  /** getStory - get a specific story's info formatted nicely for JONS resp.
+  /** getStory - get a specific story's info formatted nicely for JSON resp.
    * @param {interger} storyId
    * @return { Promise <{ storyId, title, author, url, createdAt, updatedAt, username }>}
    */
@@ -123,6 +123,37 @@ class Story {
       createdAt: createdat,
       updatedAt: updatedat
     };
+  }
+
+  /** patchStory - update a specific story's info JSON resp.
+   * @param {interger} storyId
+   * @property {object} storyDetails (at least one property below)
+   * @property {string} storyDetails.author
+   * @property {string} storyDetails.title
+   * @property {string} storyDetails.url
+   * @return { Promise <{ storyId, title, author, url, createdAt, updatedAt, username }>}
+   */
+  static async patchStory(storyId, storyUpdateDetails) {
+    // check if story exists, else throw error
+    await Story.getStoryDbInfo(storyId);
+
+    // add timestamp to be updated
+    storyUpdateDetails.updatedat = new Date();
+
+    // generate sql commands for update
+    const { query, values } = sqlForPartialUpdate(
+      'stories',
+      storyUpdateDetails,
+      'storyid',
+      storyId
+    );
+
+    // update database
+    await db.query(query, values);
+
+    // get updated userDetails
+    const story = await Story.getStory(storyId);
+    return story;
   }
 }
 

@@ -9,6 +9,7 @@ const validateJSONSchema = require('../helpers/validateJSONSchema');
 
 // json validation
 const storiesPostSchema = require('../schemas/storiesPostSchema.json');
+const storiesPatchSchema = require('../schemas/storiesPatchSchema.json');
 
 // import middleware
 const { ensureValidStoryId } = require('../middleware/stories');
@@ -72,12 +73,18 @@ router.get('/:storyId', ensureValidStoryId, async (req, res, next) => {
  * input: token (header), { story: { author, title, url} }
  * output: { story: { storyDetails } }
  */
-router.patch('/:storyId', ensureValidStoryId, (req, res, next) => {
+router.patch('/:storyId', ensureValidStoryId, async (req, res, next) => {
+  try {
+    // if schema is invalid, throw error
+    validateJSONSchema(req.body, storiesPatchSchema);
+  } catch (err) {
+    return next(err);
+  }
+
   try {
     const { storyId } = req.params;
-    return res.json({
-      message: `Story with id: ${storyId} was updated.`
-    });
+    const story = await Story.patchStory(storyId, req.body.story);
+    return res.json({ story });
   } catch (error) {
     return next(error);
   }
@@ -90,7 +97,7 @@ router.patch('/:storyId', ensureValidStoryId, (req, res, next) => {
  * output: { message: "Story with ${storyId} successfully deleted"
  *           story: { storyDetails } }
  */
-router.delete('/:storyId', (req, res, next) => {
+router.delete('/:storyId', ensureValidStoryId, async (req, res, next) => {
   try {
     const { storyId } = req.params;
     return res.json({

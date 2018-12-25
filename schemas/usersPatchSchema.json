@@ -13,6 +13,7 @@
       "type": "object",
       "title": "The User Schema",
       "default": null,
+      "minProperties": 1,
       "additionalProperties": false,
       "properties": {
         "name": {

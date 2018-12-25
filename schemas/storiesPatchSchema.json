@@ -1,0 +1,50 @@
+{
+  "definitions": {},
+  "$schema": "",
+  "$id": "http://example.com/root.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "default": null,
+  "additionalProperties": false,
+  "required": ["story"],
+  "properties": {
+    "story": {
+      "$id": "#/properties/story",
+      "type": "object",
+      "title": "The Story Schema",
+      "default": null,
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "$id": "#/properties/story/properties/title",
+          "type": "string",
+          "title": "The Title Schema",
+          "default": "",
+          "examples": ["Where did the dogs go then?"],
+          "minLength": 1,
+          "pattern": "^(.*)$"
+        },
+        "url": {
+          "$id": "#/properties/story/properties/url",
+          "type": "string",
+          "title": "The Url Schema",
+          "default": "",
+          "examples": ["http://www.urbancuriosity2.com"],
+          "minLength": 1,
+          "pattern": "^(.*)$",
+          "format": "uri"
+        },
+        "author": {
+          "$id": "#/properties/story/properties/author",
+          "type": "string",
+          "title": "The Author Schema",
+          "default": "",
+          "examples": ["Bobby"],
+          "minLength": 1,
+          "pattern": "^(.*)$"
+        }
+      }
+    }
+  }
+}

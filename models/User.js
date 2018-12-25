@@ -84,7 +84,7 @@ class User {
     return result.rows[0];
   }
 
-  /** getUser - gets a specific user's info formatted nicely for JONS resp.
+  /** getUser - gets a specific user's info formatted nicely for JSON resp.
    * @param {string} username
    * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
    * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
@@ -133,7 +133,7 @@ class User {
   }
 
   /** getUsers - returns list of all users in db filtered by criteria.
-   * @property {object} reqDetails
+   * @property {object} reqDetails (optional properties below)
    * @property {integer} reqDetails.skip
    * @property {integer} reqDetails.limit
    * @returns {Promise <[ { username, name, createdAt, updatedAt }, ...]>}
@@ -163,7 +163,7 @@ class User {
 
   /** @description patchUser - updates specific user in database
    * @param {string} username
-   * @property {object} userUpdateDetails
+   * @property {object} userUpdateDetails (at least one property below)
    * @property {string} userUpdateDetails.name
    * @property {string} userUpdateDetails.password
    * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}

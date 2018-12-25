@@ -197,6 +197,50 @@ describe('getStory method', async () => {
   });
 });
 
+describe('patchStory method', async () => {
+  it('patching a specific story succeeded', async () => {
+    const stories = await Story.getStories({});
+    const storyId = stories[0].storyId;
+
+    const story = await Story.patchStory(storyId, {
+      title: 'How to eat cookies well!.',
+      url: 'http://www.goodcookies.com/updated',
+      author: 'Bobby-O'
+    });
+
+    expect(story).toHaveProperty('username', 'bob');
+    expect(story).toHaveProperty('title', 'How to eat cookies well!.');
+    expect(story).toHaveProperty('storyId', storyId);
+  });
+
+  it('failed due to non-existing storyId', async () => {
+    try {
+      await Story.getStory(-1);
+    } catch (error) {
+      expect(error).toHaveProperty('title', 'Story Not Found');
+    }
+  });
+
+  it('failed due to invalid parameters storyId', async () => {
+    try {
+      const stories = await Story.getStories({});
+      const storyId = stories[0].storyId;
+
+      await Story.patchStory(storyId, {
+        title: 'How to eat cookies well!.',
+        url: 'http://www.goodcookies.com/updated',
+        author: 'Bobby-O',
+        cookies: 'chocolate'
+      });
+    } catch (error) {
+      expect(error).toHaveProperty(
+        'message',
+        'column "cookies" of relation "stories" does not exist'
+      );
+    }
+  });
+});
+
 afterAll(async function() {
   // close db connection
   await db.end();

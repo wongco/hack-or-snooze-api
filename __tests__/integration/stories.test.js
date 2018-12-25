@@ -151,6 +151,78 @@ describe('GET /stories/:storyId', async () => {
   });
 });
 
+describe('PATCH /stories/:storyId', async () => {
+  it('Updated specific story succeeded with valid storyId and params', async () => {
+    const response = await request(app).get('/stories');
+    const { stories } = response.body;
+    const storyId = stories[0].storyId;
+
+    const response2 = await request(app)
+      .patch(`/stories/${storyId}`)
+      .send({
+        story: {
+          title: 'How to eat cookies well!.',
+          url: 'http://www.goodcookies.com/updated',
+          author: 'Bobby-O'
+        }
+      });
+    const { story } = response2.body;
+    expect(response2.statusCode).toBe(200);
+    expect(story).toHaveProperty('storyId', storyId);
+    expect(story).toHaveProperty('title', 'How to eat cookies well!.');
+  });
+
+  it('Failed to update story due to non-existent storyId', async () => {
+    const response = await request(app)
+      .patch('/stories/200000')
+      .send({
+        story: {
+          title: 'How to eat cookies well!.',
+          url: 'http://www.goodcookies.com/updated',
+          author: 'Bobby-O'
+        }
+      });
+    const { error } = response.body;
+    expect(error.status).toBe(404);
+    expect(error).toHaveProperty('title', 'Story Not Found');
+  });
+
+  it('Failed to update story due to invalid parameters', async () => {
+    const response = await request(app).get('/stories');
+    const { stories } = response.body;
+    const storyId = stories[0].storyId;
+
+    const response2 = await request(app)
+      .patch(`/stories/${storyId}`)
+      .send({
+        story: {
+          title: 'How to eat cookies well!.',
+          url: 'http://www.goodcookies.com/updated',
+          author: 'Bobby-O',
+          cookie: 'vanilla'
+        }
+      });
+
+    const { error } = response2.body;
+    expect(error.status).toBe(400);
+    expect(error).toHaveProperty('title', 'Bad Request');
+  });
+
+  // it('Failed to get story due to non-existing storyId', async () => {
+  //   const response = await request(app).get(`/stories/100000`);
+  //   const { error } = response.body;
+  //   expect(error.status).toBe(404);
+  //   expect(error).toHaveProperty('title', 'Story Not Found');
+  // });
+
+  // it('Failed to get story due to invalid storyId input', async () => {
+  //   const response = await request(app).get(`/stories/abc`);
+  //   const { error } = response.body;
+  //   expect(error.status).toBe(400);
+  //   expect(error).toHaveProperty('title', 'Invalid StoryId');
+  // });
+});
+
 afterAll(async function() {
   // close db connection
   await db.end();
