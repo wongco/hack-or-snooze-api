@@ -88,6 +88,41 @@ describe('GET /stories', async () => {
   });
 });
 
+describe('POST /stories', async () => {
+  it('Adding a story succeeded', async () => {
+    const response = await request(app)
+      .post('/stories')
+      .send({
+        story: {
+          title: 'How to cook dinner.',
+          url: 'http://www.recipeguide.com',
+          author: 'Bobby',
+          username: 'bob'
+        }
+      });
+
+    const { story } = response.body;
+    expect(response.statusCode).toBe(200);
+    expect(story).toHaveProperty('title', 'How to cook dinner.');
+  });
+
+  it('failed to add a story due to missing parameters', async () => {
+    const response = await request(app)
+      .post('/stories')
+      .send({
+        story: {
+          title: 'How to cook dinner.',
+          url: 'http://www.recipeguide.com',
+          username: 'bob'
+        }
+      });
+
+    const { error } = response.body;
+    expect(error.status).toBe(400);
+    expect(error).toHaveProperty('title', 'Bad Request');
+  });
+});
+
 afterAll(async function() {
   // close db connection
   await db.end();

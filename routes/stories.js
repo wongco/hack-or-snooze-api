@@ -7,6 +7,9 @@ const Story = require('../models/Story');
 // import helper
 const validateJSONSchema = require('../helpers/validateJSONSchema');
 
+// json validation
+const storiesPostSchema = require('../schemas/storiesPostSchema.json');
+
 /** Base Route: /stories */
 
 /** GET - /stories
@@ -27,10 +30,20 @@ router.get('/', async (req, res, next) => {
 /** POST - /stories
  * desc: Create a New Story
  * input: token (header), { story: {username, author, title, url} }
+ * output: { story: { storyDetails } }
  */
-router.post('/', (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
-    return res.json({ message: 'New Story added!' });
+    // if schema is invalid, throw error
+    validateJSONSchema(req.body, storiesPostSchema);
+  } catch (err) {
+    return next(err);
+  }
+
+  try {
+    // operates under assumption user has been authenticated and checked in middlware
+    const story = await Story.addStory(req.body.story);
+    return res.json({ story });
   } catch (error) {
     return next(error);
   }

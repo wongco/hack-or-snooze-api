@@ -10,7 +10,7 @@ const APIError = require('../models/ApiError');
 const validateJSONSchema = require('../helpers/validateJSONSchema');
 
 // json validation
-const userPatchSchema = require('../schemas/userPatchSchema.json');
+const usersPatchSchema = require('../schemas/usersPatchSchema.json');
 
 /** Base Route: /users */
 
@@ -65,7 +65,7 @@ router.get('/:username', async (req, res, next) => {
 router.patch('/:username', async (req, res, next) => {
   try {
     // if schema is invalid, throw error
-    validateJSONSchema(req.body, userPatchSchema);
+    validateJSONSchema(req.body, usersPatchSchema);
   } catch (err) {
     return next(err);
   }

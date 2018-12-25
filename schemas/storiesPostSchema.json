@@ -1,0 +1,60 @@
+{
+  "definitions": {},
+  "$schema": "",
+  "$id": "http://example.com/root.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "default": null,
+  "additionalProperties": false,
+  "required": ["story"],
+  "properties": {
+    "story": {
+      "$id": "#/properties/story",
+      "type": "object",
+      "title": "The Story Schema",
+      "default": null,
+      "additionalProperties": false,
+      "required": ["username", "author", "title", "url"],
+      "properties": {
+        "username": {
+          "$id": "#/properties/story/properties/username",
+          "type": "string",
+          "title": "The Username Schema",
+          "default": "",
+          "examples": ["bob"],
+          "minLength": 1,
+          "pattern": "^(.*)$"
+        },
+        "author": {
+          "$id": "#/properties/story/properties/author",
+          "type": "string",
+          "title": "The Author Schema",
+          "default": "",
+          "examples": ["ArrrrPirates"],
+          "minLength": 1,
+          "pattern": "^(.*)$"
+        },
+        "title": {
+          "$id": "#/properties/story/properties/title",
+          "type": "string",
+          "title": "The Title Schema",
+          "default": "",
+          "examples": ["Psy - Genetleman"],
+          "minLength": 1,
+          "pattern": "^(.*)$"
+        },
+        "url": {
+          "$id": "#/properties/story/properties/url",
+          "type": "string",
+          "title": "The Url Schema",
+          "default": "",
+          "examples": [
+            "https://www.youtube.com/watch?v=ASO_zypdnsQ&list=PLFd8oTOTa63XxaqljzpJ_PbrZj22NJ0iK"
+          ],
+          "minLength": 1,
+          "pattern": "^(.*)$"
+        }
+      }
+    }
+  }
+}
