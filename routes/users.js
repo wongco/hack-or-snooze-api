@@ -12,6 +12,9 @@ const validateJSONSchema = require('../helpers/validateJSONSchema');
 // json validation
 const usersPatchSchema = require('../schemas/usersPatchSchema.json');
 
+// import middleware
+const { ensureValidStoryId } = require('../middleware/stories');
+
 /** Base Route: /users */
 
 /* Authenticated Route - Token Required */
@@ -116,16 +119,19 @@ router.delete('/:username', async (req, res, next) => {
  *                    updatedAt,
  *                    username } }
  */
-router.post('/:username/favorites/:storyId', (req, res, next) => {
-  try {
-    const { username, storyId } = req.params;
-    return res.json({
-      message: `User ${username} had story ${storyId} added to favorites!`
-    });
-  } catch (error) {
-    return next(error);
+router.post(
+  '/:username/favorites/:storyId',
+  ensureValidStoryId,
+  async (req, res, next) => {
+    try {
+      const { username, storyId } = req.params;
+      const user = await User.addFavorite(username, storyId);
+      return res.json({ message: 'Favorite Added!', user });
+    } catch (error) {
+      return next(error);
+    }
   }
-});
+);
 
 /* Authorized Route - Token Required, Correct User */
 /** DELETE - /users/:username/favorites/:storyId

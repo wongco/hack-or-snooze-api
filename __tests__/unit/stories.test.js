@@ -52,19 +52,6 @@ beforeEach(async () => {
   });
 });
 
-describe('getUserOwnStories method', async () => {
-  it('getting a users own stories succeeded', async () => {
-    const stories = await Story.getUserOwnStories('bob');
-    expect(stories).toHaveLength(1);
-    expect(stories[0]).toHaveProperty('username', 'bob');
-  });
-
-  it('getting stories for non exisiting user returns no results', async () => {
-    const stories = await Story.getUserOwnStories('jimmy');
-    expect(stories).toHaveLength(0);
-  });
-});
-
 describe('getStories method', async () => {
   it('getting all stories with no parameters succeeded', async () => {
     const stories = await Story.getStories({});

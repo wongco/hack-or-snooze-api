@@ -97,8 +97,8 @@ class User {
     const { createdat, updatedat, ...userDetails } = user;
 
     // get actual favorites and stories
-    const favorites = []; // TODO: update using actual story methods
-    const stories = await Story.getUserOwnStories(username);
+    const favorites = await User.getUserFavorites(username);
+    const stories = await User.getUserOwnStories(username);
 
     return {
       ...userDetails,
@@ -107,6 +107,17 @@ class User {
       favorites,
       stories
     };
+  }
+
+  /** getUserOwnStories - gets stories created by a specific user
+   * @param {string} username
+   * @return { Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
+   */
+  static async getUserOwnStories(username) {
+    const result = await db.query('SELECT * FROM stories where username = $1', [
+      username
+    ]);
+    return result.rows;
   }
 
   /** checkValidCreds - checks if a user's credentials are valid
@@ -212,6 +223,53 @@ class User {
     // grab user details before deleting
     const user = await User.getUser(username);
     await db.query('DELETE FROM users WHERE username = $1', [username]);
+    return user;
+  }
+
+  /** getUserFavorites - get user's favorites stories
+   * @param {string} username
+   * @return {Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
+   */
+  static async getUserFavorites(username) {
+    const dbStories = await db.query(
+      `SELECT s.storyid, s.title, s.url, s.author, s.username, s.createdat, s.updatedat
+       FROM favorites as f
+       JOIN stories as s
+       ON f.storyid = s.storyid
+       WHERE f.username = $1`,
+      [username]
+    );
+
+    // map & deconstruct data for camelCase formatting
+    const stories = dbStories.rows.map(dbStory => {
+      const { createdat, updatedat, storyid, ...userDetails } = dbStory;
+
+      return {
+        ...userDetails,
+        storyId: storyid,
+        createdAt: createdat,
+        updatedAt: updatedat
+      };
+    });
+
+    return stories;
+  }
+
+  /** addFavorites - add storyId to user's favorites stories
+   * @param {string} username
+   * @return {Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
+   */
+  static async addFavorite(username, storyId) {
+    // check if story exists
+    await Story.getStoryDbInfo(storyId);
+
+    // store username/storyId pair in favorites
+    await db.query('INSERT INTO favorites VALUES ($1, $2)', [
+      username,
+      storyId
+    ]);
+
+    const user = await User.getUser(username);
     return user;
   }
 }

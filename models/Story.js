@@ -16,17 +16,6 @@ const { STORIES_LIST_LIMIT } = require('../config');
 /** Story on the site */
 
 class Story {
-  /** getUserOwnStories - gets stories created by a specific user
-   * @param {string} username
-   * @return { Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
-   */
-  static async getUserOwnStories(username) {
-    const result = await db.query('SELECT * FROM stories where username = $1', [
-      username
-    ]);
-    return result.rows;
-  }
-
   /** addStory - adds new story to db
    * @property {object} story
    * @property {string} story.username

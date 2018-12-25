@@ -3,6 +3,7 @@
 process.env.NODE_ENV = 'test';
 
 const User = require('../../models/User');
+const Story = require('../../models/Story');
 const db = require('../../db');
 
 beforeEach(async () => {
@@ -19,6 +20,34 @@ beforeEach(async () => {
     username: 'jas',
     name: 'Jason',
     password: '123456'
+  });
+
+  await Story.addStory({
+    title: 'How to eat cookies.',
+    url: 'http://www.goodcookies.com',
+    author: 'Bobby',
+    username: 'bob'
+  });
+
+  await Story.addStory({
+    title: 'Badminton? What is that?',
+    url: 'http://www.goodsports.com',
+    author: 'Jason',
+    username: 'jas'
+  });
+
+  await Story.addStory({
+    title: 'How to eat fruit.',
+    url: 'http://www.goodfruit.com',
+    author: 'Jason',
+    username: 'jas'
+  });
+
+  await Story.addStory({
+    title: 'Balling? What is that?',
+    url: 'http://www.greatscott.com',
+    author: 'Jason',
+    username: 'jas'
   });
 });
 
@@ -94,6 +123,19 @@ describe('getUser method', async () => {
   });
 });
 
+describe('getUserOwnStories method', async () => {
+  it('getting a users own stories succeeded', async () => {
+    const stories = await User.getUserOwnStories('bob');
+    expect(stories).toHaveLength(1);
+    expect(stories[0]).toHaveProperty('username', 'bob');
+  });
+
+  it('getting stories for non exisiting user returns no results', async () => {
+    const stories = await User.getUserOwnStories('jimmy');
+    expect(stories).toHaveLength(0);
+  });
+});
+
 describe('checkValidCreds method', async () => {
   it('successfully verifies user credentials', async () => {
     const isValid = await User.checkValidCreds('bob', '123456');
@@ -117,7 +159,7 @@ describe('checkValidCreds method', async () => {
   });
 });
 
-describe('getAllUsers method', async () => {
+describe('getUsers method', async () => {
   it('successfully gets all users with params specified', async () => {
     const users = await User.getUsers({
       skip: '1',
@@ -197,6 +239,61 @@ describe('deleteUser method', async () => {
       await User.deleteUser('jack');
     } catch (error) {
       expect(error).toHaveProperty('title', 'User Not Found');
+    }
+  });
+});
+
+describe('getUserFavorites method', async () => {
+  it('successfully retrieved user favorites', async () => {
+    // get first storyID
+    const stories = await Story.getStories({});
+    const storyId = stories[0].storyId;
+
+    // add storyID to favorites
+    await User.addFavorite('bob', storyId);
+
+    const userFavorites = await User.getUserFavorites('bob');
+    expect(userFavorites).toHaveLength(1);
+  });
+
+  it('no results for non-existent user', async () => {
+    const stories = await User.getUserFavorites('kevino');
+    expect(stories).toHaveLength(0);
+  });
+});
+
+describe('addFavorite method', async () => {
+  it('successfully added story to user favorites', async () => {
+    const stories = await Story.getStories({});
+    const storyId = stories[0].storyId;
+
+    const user = await User.addFavorite('bob', storyId);
+
+    expect(user).toHaveProperty('favorites');
+    expect(user.favorites).toHaveLength(1);
+  });
+
+  it('failed to add story with invalid storyId', async () => {
+    try {
+      await User.addFavorite('bob', 10000);
+    } catch (error) {
+      expect(error).toHaveProperty(
+        'message',
+        "No story with ID '10000' found."
+      );
+    }
+  });
+
+  it('failed to add story with invalid userId', async () => {
+    try {
+      const stories = await Story.getStories({});
+      const storyId = stories[0].storyId;
+      await User.addFavorite('jeremiah', storyId);
+    } catch (error) {
+      expect(error).toHaveProperty(
+        'message',
+        'insert or update on table "favorites" violates foreign key constraint "favorites_username_fkey"'
+      );
     }
   });
 });
