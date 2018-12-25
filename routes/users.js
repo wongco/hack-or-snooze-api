@@ -145,15 +145,18 @@ router.post(
  *                    updatedAt,
  *                    username } }
  */
-router.delete('/:username/favorites/:storyId', (req, res, next) => {
-  try {
-    const { username, storyId } = req.params;
-    return res.json({
-      message: `User ${username} had story ${storyId} removed from favorites!`
-    });
-  } catch (error) {
-    return next(error);
+router.delete(
+  '/:username/favorites/:storyId',
+  ensureValidStoryId,
+  async (req, res, next) => {
+    try {
+      const { username, storyId } = req.params;
+      const user = await User.deleteFavorite(username, storyId);
+      return res.json({ message: 'Favorite Removed!', user });
+    } catch (error) {
+      return next(error);
+    }
   }
-});
+);
 
 module.exports = router;

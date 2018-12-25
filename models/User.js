@@ -255,19 +255,57 @@ class User {
     return stories;
   }
 
-  /** addFavorites - add storyId to user's favorites stories
+  /** addFavorite - add storyId to user's favorite stories
    * @param {string} username
-   * @return {Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
+   * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
+   * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
    */
   static async addFavorite(username, storyId) {
     // check if story exists
     await Story.getStoryDbInfo(storyId);
 
-    // store username/storyId pair in favorites
-    await db.query('INSERT INTO favorites VALUES ($1, $2)', [
-      username,
-      storyId
-    ]);
+    // check if storyId is already in user favs
+    const result = await db.query(
+      'SELECT * FROM favorites WHERE username = $1 AND storyid = $2',
+      [username, storyId]
+    );
+
+    // if does not exist in favorites, add to favorties
+    if (result.rows.length === 0) {
+      // store username/storyId pair in favorites
+      await db.query('INSERT INTO favorites VALUES ($1, $2)', [
+        username,
+        storyId
+      ]);
+    }
+
+    const user = await User.getUser(username);
+    return user;
+  }
+
+  /** deleteFavorite - delete storyId from user's favorite stories
+   * @param {string} username
+   * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
+   * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
+   */
+  static async deleteFavorite(username, storyId) {
+    // check if story exists
+    await Story.getStoryDbInfo(storyId);
+
+    // check if storyId is already in user favs
+    const result = await db.query(
+      'SELECT * FROM favorites WHERE username = $1 AND storyid = $2',
+      [username, storyId]
+    );
+
+    // if exists in favorties, delete from favorties
+    if (result.rows.length === 1) {
+      // delete username/storyId pair from favorites
+      await db.query(
+        'DELETE FROM favorites WHERE username = $1 AND storyID = $2',
+        [username, storyId]
+      );
+    }
 
     const user = await User.getUser(username);
     return user;

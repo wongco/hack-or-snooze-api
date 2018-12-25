@@ -49,6 +49,11 @@ beforeEach(async () => {
     author: 'Jason',
     username: 'jas'
   });
+
+  const stories = await Story.getStories({});
+  const storyId = stories[0].storyId;
+
+  await User.addFavorite('jas', storyId);
 });
 
 describe('addUser method', async () => {
@@ -294,6 +299,39 @@ describe('addFavorite method', async () => {
         'message',
         'insert or update on table "favorites" violates foreign key constraint "favorites_username_fkey"'
       );
+    }
+  });
+});
+
+describe('deleteFavorite method', async () => {
+  it('successfully delete story from user favorites', async () => {
+    const stories = await Story.getStories({});
+    const storyId = stories[0].storyId;
+
+    const user = await User.deleteFavorite('jas', storyId);
+
+    expect(user).toHaveProperty('favorites');
+    expect(user.favorites).toHaveLength(0);
+  });
+
+  it('failed to delete story with invalid storyId', async () => {
+    try {
+      await User.deleteFavorite('jas', 10000);
+    } catch (error) {
+      expect(error).toHaveProperty(
+        'message',
+        "No story with ID '10000' found."
+      );
+    }
+  });
+
+  it('failed to delete story with invalid userId', async () => {
+    try {
+      const stories = await Story.getStories({});
+      const storyId = stories[0].storyId;
+      await User.deleteFavorite('jeremiah', storyId);
+    } catch (error) {
+      expect(error).toHaveProperty('message', "No user 'jeremiah' found.");
     }
   });
 });

@@ -3,6 +3,7 @@ process.env.NODE_ENV = 'test';
 
 const request = require('supertest');
 const User = require('../../models/User');
+const Story = require('../../models/Story');
 
 // app imports
 const app = require('../../app');
@@ -23,6 +24,39 @@ beforeEach(async () => {
     name: 'Jason',
     password: '123456'
   });
+
+  await Story.addStory({
+    title: 'How to eat cookies.',
+    url: 'http://www.goodcookies.com',
+    author: 'Bobby',
+    username: 'bob'
+  });
+
+  await Story.addStory({
+    title: 'Badminton? What is that?',
+    url: 'http://www.goodsports.com',
+    author: 'Jason',
+    username: 'jas'
+  });
+
+  await Story.addStory({
+    title: 'How to eat fruit.',
+    url: 'http://www.goodfruit.com',
+    author: 'Jason',
+    username: 'jas'
+  });
+
+  await Story.addStory({
+    title: 'Balling? What is that?',
+    url: 'http://www.greatscott.com',
+    author: 'Jason',
+    username: 'jas'
+  });
+
+  const stories = await Story.getStories({});
+  const storyId = stories[0].storyId;
+
+  await User.addFavorite('jas', storyId);
 });
 
 describe('GET /users', async () => {
@@ -166,6 +200,76 @@ describe('DELETE /users/:username', async () => {
     const { error } = response.body;
     expect(error.status).toBe(404);
     expect(error).toHaveProperty('title', 'User Not Found');
+  });
+});
+
+describe('POST /users/:username/favorites/:storyId', async () => {
+  it('Adding story to user favorites succeeded', async () => {
+    const stories = await Story.getStories({});
+    const storyId = stories[1].storyId;
+
+    const response = await request(app).post(`/users/jas/favorites/${storyId}`);
+    const { user } = response.body;
+    expect(response.statusCode).toBe(200);
+    expect(user).toHaveProperty('username', 'jas');
+    expect(user).toHaveProperty('favorites');
+    expect(user.favorites).toHaveLength(2);
+  });
+
+  it('Failed to add non-existent story', async () => {
+    const response = await request(app).post(`/users/jas/favorites/100000`);
+    const { error } = response.body;
+    expect(error.status).toBe(404);
+    expect(error).toHaveProperty('title', 'Story Not Found');
+  });
+
+  it('Re-Adding existing favorite has no ill effect', async () => {
+    const stories = await Story.getStories({});
+    const storyId = stories[0].storyId;
+
+    const response = await request(app).post(`/users/jas/favorites/${storyId}`);
+    const { user } = response.body;
+    expect(response.statusCode).toBe(200);
+    expect(user).toHaveProperty('username', 'jas');
+    expect(user).toHaveProperty('favorites');
+    expect(user.favorites).toHaveLength(1);
+  });
+});
+
+describe('DELETE /users/:username/favorites/:storyId', async () => {
+  it('Deleting story from user favorites succeeded', async () => {
+    const stories = await User.getUserFavorites('jas');
+    const storyId = stories[0].storyId;
+
+    const response = await request(app).delete(
+      `/users/jas/favorites/${storyId}`
+    );
+    const { user } = response.body;
+    expect(response.statusCode).toBe(200);
+    expect(user).toHaveProperty('username', 'jas');
+    expect(user).toHaveProperty('favorites');
+    expect(user.favorites).toHaveLength(0);
+  });
+
+  it('Failed to remove non-existent story', async () => {
+    const response = await request(app).delete(`/users/jas/favorites/100000`);
+    const { error } = response.body;
+    expect(error.status).toBe(404);
+    expect(error).toHaveProperty('title', 'Story Not Found');
+  });
+
+  it('Removing story not in favorites has no ill effect', async () => {
+    const stories = await Story.getStories({});
+    const storyId = stories[3].storyId;
+
+    const response = await request(app).delete(
+      `/users/jas/favorites/${storyId}`
+    );
+    const { user } = response.body;
+    expect(response.statusCode).toBe(200);
+    expect(user).toHaveProperty('username', 'jas');
+    expect(user).toHaveProperty('favorites');
+    expect(user.favorites).toHaveLength(1);
   });
 });
 
