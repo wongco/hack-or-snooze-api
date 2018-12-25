@@ -123,6 +123,34 @@ describe('POST /stories', async () => {
   });
 });
 
+describe('GET /stories/:storyId', async () => {
+  it('Get specific story succeeded with valid storyId', async () => {
+    const response = await request(app).get('/stories');
+    const { stories } = response.body;
+    const storyId = stories[0].storyId;
+
+    const response2 = await request(app).get(`/stories/${storyId}`);
+    const { story } = response2.body;
+    expect(response2.statusCode).toBe(200);
+    expect(story).toHaveProperty('storyId', storyId);
+    expect(story).toHaveProperty('title');
+  });
+
+  it('Failed to get story due to non-existing storyId', async () => {
+    const response = await request(app).get(`/stories/100000`);
+    const { error } = response.body;
+    expect(error.status).toBe(404);
+    expect(error).toHaveProperty('title', 'Story Not Found');
+  });
+
+  it('Failed to get story due to invalid storyId input', async () => {
+    const response = await request(app).get(`/stories/abc`);
+    const { error } = response.body;
+    expect(error.status).toBe(400);
+    expect(error).toHaveProperty('title', 'Invalid StoryId');
+  });
+});
+
 afterAll(async function() {
   // close db connection
   await db.end();

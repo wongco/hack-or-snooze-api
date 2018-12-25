@@ -66,7 +66,7 @@ class User {
     };
   }
 
-  /** getUserDbInfo - gets a specific user's info from the database
+  /** getUserDbInfo - gets a specific user's info from the db
    * @param {string} username
    * @return {Promise <{username, name, createdAt, updatedAt}>}
    */
@@ -93,12 +93,12 @@ class User {
     // check if user exists
     const user = await User.getUserDbInfo(username);
 
-    // deconstruct data for formatting
+    // deconstruct data for camelCase formatting
     const { createdat, updatedat, ...userDetails } = user;
 
     // get actual favorites and stories
     const favorites = []; // TODO: update using actual story methods
-    const stories = await Story.getUserOwnStories(username); // TODO: update using actual story methods
+    const stories = await Story.getUserOwnStories(username);
 
     return {
       ...userDetails,

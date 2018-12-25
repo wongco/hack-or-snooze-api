@@ -10,6 +10,9 @@ const validateJSONSchema = require('../helpers/validateJSONSchema');
 // json validation
 const storiesPostSchema = require('../schemas/storiesPostSchema.json');
 
+// import middleware
+const { ensureValidStoryId } = require('../middleware/stories');
+
 /** Base Route: /stories */
 
 /** GET - /stories
@@ -53,12 +56,11 @@ router.post('/', async (req, res, next) => {
  * desc: Get a Story
  * output: { story: { storyDetails } }
  */
-router.get('/:storyId', (req, res, next) => {
+router.get('/:storyId', ensureValidStoryId, async (req, res, next) => {
   try {
     const { storyId } = req.params;
-    return res.json({
-      message: `Retrieved a single story with id: ${storyId}.`
-    });
+    const story = await Story.getStory(storyId);
+    return res.json({ story });
   } catch (error) {
     return next(error);
   }
@@ -70,7 +72,7 @@ router.get('/:storyId', (req, res, next) => {
  * input: token (header), { story: { author, title, url} }
  * output: { story: { storyDetails } }
  */
-router.patch('/:storyId', (req, res, next) => {
+router.patch('/:storyId', ensureValidStoryId, (req, res, next) => {
   try {
     const { storyId } = req.params;
     return res.json({

@@ -85,6 +85,45 @@ class Story {
 
     return stories;
   }
+
+  /** getStoryDbInfo - gets a specific story's info from the db
+   * @param {string} username
+   * @return { Promise <{ storyid, title, author, url, createdat, updatedat, username }>}
+   */
+  static async getStoryDbInfo(storyId) {
+    const result = await db.query('SELECT * FROM stories WHERE storyid = $1', [
+      storyId
+    ]);
+
+    // check if story exists, else throw error
+    if (result.rows.length === 0) {
+      throw new APIError(
+        `No story with ID '${storyId}' found.`,
+        404,
+        'Story Not Found'
+      );
+    }
+    return result.rows[0];
+  }
+
+  /** getStory - get a specific story's info formatted nicely for JONS resp.
+   * @param {interger} storyId
+   * @return { Promise <{ storyId, title, author, url, createdAt, updatedAt, username }>}
+   */
+  static async getStory(storyId) {
+    // check if story exists and get story Info
+    const story = await Story.getStoryDbInfo(storyId);
+
+    // deconstruct data for camelCase formatting
+    const { createdat, updatedat, storyid, ...userDetails } = story;
+
+    return {
+      ...userDetails,
+      storyId: storyid,
+      createdAt: createdat,
+      updatedAt: updatedat
+    };
+  }
 }
 
 module.exports = Story;
