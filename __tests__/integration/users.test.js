@@ -1,4 +1,4 @@
-/** Integration tests for auth routes */
+/** Integration tests for users routes */
 process.env.NODE_ENV = 'test';
 
 const request = require('supertest');
