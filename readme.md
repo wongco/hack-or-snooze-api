@@ -1,6 +1,6 @@
 # hack-or-snooze-api
 
-Hack-or-snooze-api is a RESTful API backend for story/message posting board built in node, express & postgresql.
+Hack-or-snooze-api is a RESTful API backend for a story/message posting board built in node, express & postgresql.
 
 ## Prerequisites
 
@@ -95,7 +95,6 @@ You will need to have the following items installed in order to run this program
 - GET - /stories/storyId
 - PATCH - /stories/storyId
 - DELETE - /stories/storyId
-
 
 ## Built With
 
