@@ -1,5 +1,4 @@
 /** jest tests for Stories class */
-
 process.env.NODE_ENV = 'test';
 
 const db = require('../../db');

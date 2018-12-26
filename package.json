@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "jest -i",
-    "start": "node server.js"
+    "start": "node server.js",
+    "dbrefresh": "node ./helpers/addDbData.js"
   },
   "author": "wongco",
   "license": "ISC",

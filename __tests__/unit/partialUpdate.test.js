@@ -1,3 +1,5 @@
+process.env.NODE_ENV = 'test';
+
 const sqlForPartialUpdate = require('../../helpers/partialUpdate');
 
 describe('partialUpdate()', () => {

@@ -17,23 +17,6 @@ beforeEach(async () => {
     name: 'Bobby',
     password: '123456'
   });
-
-  // const bobResponse = await request(app)
-  //   .post('/login')
-  //   .send({
-  //     username: 'bob',
-  //     password: '123456'
-  //   });
-
-  // const jeremyResponse = await request(app)
-  //   .post('/login')
-  //   .send({
-  //     username: 'jeremy',
-  //     password: '123456'
-  //   });
-
-  // bobToken = bobResponse.body.token;
-  // jeremyToken = jeremyResponse.body.token;
 });
 
 describe('POST /signup', async () => {

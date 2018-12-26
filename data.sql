@@ -28,9 +28,3 @@ CREATE TABLE favorites
   storyId integer NOT NULL REFERENCES stories ON DELETE CASCADE,
   PRIMARY KEY(username, storyId)
 );
-
--- INSERT INTO users VALUES ('yay2', 'PiratesArrrrGreat2', '654321');
-
-INSERT INTO stories (title, url, author, username) VALUES ('Psy - Gentleman', 'https://www.youtube.com/watch?v=ASO_zypdnsQ&list=PLFd8oTOTa63XxaqljzpJ_PbrZj22NJ0iK', 'ArrrrPirates', 'bob');
-
-INSERT INTO favorites VALUES ('bob', 1);

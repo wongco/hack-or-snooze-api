@@ -21,6 +21,7 @@ let jasToken;
 
 beforeEach(async () => {
   // delete any data created by prior tests
+  await db.query('DELETE FROM stories');
   await db.query('DELETE FROM users');
 
   await User.addUser({

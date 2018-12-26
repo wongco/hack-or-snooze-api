@@ -8,9 +8,7 @@ const User = require('../models/User');
 const APIError = require('../models/ApiError');
 
 // import config info
-const { SECRET_KEY } = require('../config');
-// const JWT_OPTIONS = { expiresIn: 60 * 60 * 24 }; // 1 day expiration
-const JWT_OPTIONS = {}; // No Expiration - Testing Only TODO
+const { SECRET_KEY, JWT_OPTIONS } = require('../config');
 
 // import helper
 const validateJSONSchema = require('../helpers/validateJSONSchema');

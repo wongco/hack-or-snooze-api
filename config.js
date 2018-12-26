@@ -16,11 +16,24 @@ if (process.env.NODE_ENV === 'test') {
   DB_URI = 'postgresql:///hack-or-snooze-test';
 }
 
-const BCRYPT_WORK_ROUNDS = +process.env.BCRYPT_WORK_ROUNDS || 12;
+let BCRYPT_WORK_ROUNDS;
+if (process.env.NODE_ENV === 'test') {
+  BCRYPT_WORK_ROUNDS = 1;
+} else {
+  BCRYPT_WORK_ROUNDS = +process.env.BCRYPT_WORK_ROUNDS || 12;
+}
+
 const SECRET_KEY = process.env.SECRET_KEY || 'test-env-secret';
 const SERVER_PORT = +process.env.SERVER_PORT || 3000;
 const USERS_LIST_LIMIT = +process.env.USERS_LIST_LIMIT || 25;
 const STORIES_LIST_LIMIT = +process.env.STORIES_LIST_LIMIT || 25;
+
+let JWT_OPTIONS;
+if (process.env.NODE_ENV === 'test') {
+  JWT_OPTIONS = {};
+} else {
+  JWT_OPTIONS = { expiresIn: 60 * 60 * 24 * 7 };
+}
 
 module.exports = {
   SECRET_KEY,
@@ -28,5 +41,6 @@ module.exports = {
   DB_URI,
   SERVER_PORT,
   USERS_LIST_LIMIT,
-  STORIES_LIST_LIMIT
+  STORIES_LIST_LIMIT,
+  JWT_OPTIONS
 };

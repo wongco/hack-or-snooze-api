@@ -101,7 +101,12 @@ async function storiesSetup() {
 }
 
 // setup favorites on DB
-async function favoritesSetup() {}
+async function favoritesSetup() {
+  await User.addFavorite('bob', 2);
+  await User.addFavorite('jim', 1);
+  await User.addFavorite('bob', 3);
+  await User.addFavorite('karkar', 4);
+}
 
 setUp()
   .then(resp => {
