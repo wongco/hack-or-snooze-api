@@ -64,7 +64,7 @@ You will need to have the following items installed in order to run this program
    If you want to load sample data on your database, run the following command:
 
    ```
-   node ./helpers/addUserData.js
+   npm run dbrefresh
    ```
 
 ## Running Tests
@@ -77,31 +77,25 @@ You will need to have the following items installed in order to run this program
 ### Authentication
 
 - POST - /login
+- POST - /signup
 
 ### Users
 
 - GET - /users
-- POST - /users
 - GET - /users/username
 - PATCH - /users/username
 - DELETE - /users/username
+- POST - /users/username/favorites/storyId
+- DELETE - /users/username/favorites/storyId
 
-### Companies
+### Stories
 
-- GET - /companies
-- POST - /companies
-- GET - /companies/handle
-- PATCH - /companies/handle
-- DELETE - /companies/handle
+- GET - /stories
+- POST - /stories
+- GET - /stories/storyId
+- PATCH - /stories/storyId
+- DELETE - /stories/storyId
 
-### Jobs
-
-- GET - /jobs
-- POST - /jobs
-- GET - /jobs/id
-- PATCH - /jobs/id
-- DELETE - /jobs/id
-- POST - /jobs/id/apply
 
 ## Built With
 
@@ -119,7 +113,6 @@ Testing stack:
 - supertest - Testing Library (mock http requests)
 - morgan - HTTP Request Logger
 
-## Authors
+## Author
 
 - WongCo - https://github.com/wongco
-- Ronihe - https://github.com/Ronihe
