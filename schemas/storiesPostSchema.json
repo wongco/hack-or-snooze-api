@@ -52,7 +52,8 @@
             "https://www.youtube.com/watch?v=ASO_zypdnsQ&list=PLFd8oTOTa63XxaqljzpJ_PbrZj22NJ0iK"
           ],
           "minLength": 1,
-          "pattern": "^(.*)$"
+          "pattern": "^(.*)$",
+          "format": "uri"
         }
       }
     }

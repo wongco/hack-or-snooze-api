@@ -1,13 +1,23 @@
 /** Integration tests for stories routes */
 process.env.NODE_ENV = 'test';
 
+// npm imports
+const jwt = require('jsonwebtoken');
 const request = require('supertest');
+
+// class models
 const Story = require('../../models/Story');
 const User = require('../../models/User');
 
 // app imports
 const app = require('../../app');
 const db = require('../../db');
+
+// import config info
+const { SECRET_KEY } = require('../../config');
+
+let bobToken;
+let jasToken;
 
 beforeEach(async () => {
   // delete any data created by prior tests
@@ -52,6 +62,10 @@ beforeEach(async () => {
     author: 'Jason',
     username: 'jas'
   });
+
+  // setup authTokens for convenience
+  bobToken = jwt.sign({ username: 'bob' }, SECRET_KEY);
+  jasToken = jwt.sign({ username: 'jas' }, SECRET_KEY);
 });
 
 describe('GET /stories', async () => {
@@ -92,6 +106,7 @@ describe('POST /stories', async () => {
   it('Adding a story succeeded', async () => {
     const response = await request(app)
       .post('/stories')
+      .set({ Authorization: `Bearer ${bobToken}` })
       .send({
         story: {
           title: 'How to cook dinner.',
@@ -109,6 +124,7 @@ describe('POST /stories', async () => {
   it('failed to add a story due to missing parameters', async () => {
     const response = await request(app)
       .post('/stories')
+      .set({ Authorization: `Bearer ${bobToken}` })
       .send({
         story: {
           title: 'How to cook dinner.',
@@ -120,6 +136,22 @@ describe('POST /stories', async () => {
     const { error } = response.body;
     expect(error.status).toBe(400);
     expect(error).toHaveProperty('title', 'Bad Request');
+  });
+
+  it('Failed due to no auth token', async () => {
+    const response = await request(app)
+      .post('/stories')
+      .send({
+        story: {
+          title: 'How to cook dinner.',
+          url: 'http://www.recipeguide.com',
+          username: 'bob'
+        }
+      });
+
+    const { error } = response.body;
+    expect(error.status).toBe(401);
+    expect(error).toHaveProperty('title', 'Unauthorized');
   });
 });
 
@@ -165,7 +197,8 @@ describe('PATCH /stories/:storyId', async () => {
           url: 'http://www.goodcookies.com/updated',
           author: 'Bobby-O'
         }
-      });
+      })
+      .set({ Authorization: `Bearer ${bobToken}` });
     const { story } = response2.body;
     expect(response2.statusCode).toBe(200);
     expect(story).toHaveProperty('storyId', storyId);
@@ -181,7 +214,8 @@ describe('PATCH /stories/:storyId', async () => {
           url: 'http://www.goodcookies.com/updated',
           author: 'Bobby-O'
         }
-      });
+      })
+      .set({ Authorization: `Bearer ${bobToken}` });
     const { error } = response.body;
     expect(error.status).toBe(404);
     expect(error).toHaveProperty('title', 'Story Not Found');
@@ -201,11 +235,55 @@ describe('PATCH /stories/:storyId', async () => {
           author: 'Bobby-O',
           cookie: 'vanilla'
         }
-      });
+      })
+      .set({ Authorization: `Bearer ${bobToken}` });
 
     const { error } = response2.body;
     expect(error.status).toBe(400);
     expect(error).toHaveProperty('title', 'Bad Request');
+  });
+
+  it('Failed to update story due to not being author', async () => {
+    const response = await request(app).get('/stories');
+    const { stories } = response.body;
+    const storyId = stories[0].storyId;
+
+    const response2 = await request(app)
+      .patch(`/stories/${storyId}`)
+      .send({
+        story: {
+          title: 'How to eat cookies well!.',
+          url: 'http://www.goodcookies.com/updated',
+          author: 'Bobby-O',
+          cookie: 'vanilla'
+        }
+      })
+      .set({ Authorization: `Bearer ${jasToken}` });
+
+    const { error } = response2.body;
+    expect(error.status).toBe(403);
+    expect(error).toHaveProperty('title', 'Forbidden');
+  });
+
+  it('Failed due to no auth token', async () => {
+    const response = await request(app).get('/stories');
+    const { stories } = response.body;
+    const storyId = stories[0].storyId;
+
+    const response2 = await request(app)
+      .patch(`/stories/${storyId}`)
+      .send({
+        story: {
+          title: 'How to eat cookies well!.',
+          url: 'http://www.goodcookies.com/updated',
+          author: 'Bobby-O',
+          cookie: 'vanilla'
+        }
+      });
+
+    const { error } = response2.body;
+    expect(error.status).toBe(401);
+    expect(error).toHaveProperty('title', 'Unauthorized');
   });
 });
 
@@ -215,7 +293,9 @@ describe('DELETE /stories/:storyId', async () => {
     const { stories } = response.body;
     const storyId = stories[0].storyId;
 
-    const response2 = await request(app).delete(`/stories/${storyId}`);
+    const response2 = await request(app)
+      .delete(`/stories/${storyId}`)
+      .set({ Authorization: `Bearer ${bobToken}` });
     const { story } = response2.body;
     expect(response2.statusCode).toBe(200);
     expect(story).toHaveProperty('storyId', storyId);
@@ -229,17 +309,45 @@ describe('DELETE /stories/:storyId', async () => {
   });
 
   it('Failed to delete non-existent storyId', async () => {
-    const response = await request(app).delete('/stories/1000000');
+    const response = await request(app)
+      .delete('/stories/1000000')
+      .set({ Authorization: `Bearer ${bobToken}` });
     const { error } = response.body;
     expect(response.statusCode).toBe(404);
     expect(error).toHaveProperty('title', 'Story Not Found');
   });
 
   it('Failed to delete due to invalid storyID', async () => {
-    const response = await request(app).delete('/stories/abc');
+    const response = await request(app)
+      .delete('/stories/abc')
+      .set({ Authorization: `Bearer ${bobToken}` });
     const { error } = response.body;
     expect(error.status).toBe(400);
     expect(error).toHaveProperty('title', 'Invalid StoryId');
+  });
+
+  it('Failed to delete due to storyId by different author', async () => {
+    const response = await request(app).get('/stories');
+    const { stories } = response.body;
+    const storyId = stories[1].storyId;
+
+    const response2 = await request(app)
+      .delete(`/stories/${storyId}`)
+      .set({ Authorization: `Bearer ${bobToken}` });
+    const { error } = response2.body;
+    expect(error.status).toBe(403);
+    expect(error).toHaveProperty('title', 'Forbidden');
+  });
+
+  it('Failed due to no auth token', async () => {
+    const response = await request(app).get('/stories');
+    const { stories } = response.body;
+    const storyId = stories[0].storyId;
+
+    const response2 = await request(app).delete(`/stories/${storyId}`);
+    const { error } = response2.body;
+    expect(error.status).toBe(401);
+    expect(error).toHaveProperty('title', 'Unauthorized');
   });
 });
 

@@ -29,15 +29,11 @@ beforeEach(async () => {
     password: '123456'
   });
 
-  bobToken = jwt.sign({ username: 'bob' }, SECRET_KEY);
-
   await User.addUser({
     username: 'jas',
     name: 'Jason',
     password: '123456'
   });
-
-  jasToken = jwt.sign({ username: 'jas' }, SECRET_KEY);
 
   await Story.addStory({
     title: 'How to eat cookies.',
@@ -71,6 +67,10 @@ beforeEach(async () => {
   const stories = await Story.getStories({});
   const storyId = stories[0].storyId;
   await User.addFavorite('jas', storyId);
+
+  // setup authTokens for convenience
+  bobToken = jwt.sign({ username: 'bob' }, SECRET_KEY);
+  jasToken = jwt.sign({ username: 'jas' }, SECRET_KEY);
 });
 
 describe('GET /users', async () => {
@@ -143,13 +143,11 @@ describe('GET /users/:username', async () => {
   });
 
   it('Failed due to no auth token', async () => {
-    const response = await request(app)
-      .get('/users/krish')
-      .set({ Authorization: `Bearer ${bobToken}` });
+    const response = await request(app).get('/users/bob');
 
     const { error } = response.body;
-    expect(error.status).toBe(404);
-    expect(error).toHaveProperty('title', 'User Not Found');
+    expect(error.status).toBe(401);
+    expect(error).toHaveProperty('title', 'Unauthorized');
   });
 });
 
