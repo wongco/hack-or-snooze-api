@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
 
 // don't provide http logging during automated tests
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'production') {
   // middleware for logging HTTP requests to console
   const morgan = require('morgan');
   app.use(morgan('tiny'));

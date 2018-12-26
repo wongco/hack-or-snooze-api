@@ -4,7 +4,7 @@
 require('dotenv').config();
 
 // pull db uri from .env
-let DB_URI = process.env.DB_URI || 'postgresql:///hack-or-snooze';
+let DB_URI = process.env.DATABASE_URL || 'postgresql:///hack-or-snooze';
 let BCRYPT_WORK_ROUNDS = +process.env.BCRYPT_WORK_ROUNDS || 12;
 let JWT_OPTIONS = { expiresIn: 60 * 60 * 24 * 7 };
 
@@ -16,7 +16,7 @@ if (process.env.NODE_ENV === 'test') {
 }
 
 const SECRET_KEY = process.env.SECRET_KEY || 'test-env-secret';
-const SERVER_PORT = +process.env.SERVER_PORT || 3000;
+const SERVER_PORT = process.env.PORT || 3000;
 const USERS_LIST_LIMIT = +process.env.USERS_LIST_LIMIT || 25;
 const STORIES_LIST_LIMIT = +process.env.STORIES_LIST_LIMIT || 25;
 
