@@ -3,8 +3,8 @@
 // npm modules
 const jwt = require('jsonwebtoken');
 
-// import config
-const { SECRET_KEY } = require('../config');
+// import config info
+const { SECRET_KEY, JWT_OPTIONS } = require('../config');
 
 // class models
 const Story = require('../models/Story');
@@ -36,7 +36,7 @@ function ensureLoggedIn(req, res, next) {
     const token = getToken(req);
 
     // verifies token and throws error if invalid
-    const { username } = jwt.verify(token, SECRET_KEY);
+    const { username } = jwt.verify(token, SECRET_KEY, JWT_OPTIONS);
 
     // then store username for conveneince
     req.username = username;
@@ -51,7 +51,7 @@ function ensureCorrectUser(req, res, next) {
   try {
     const token = getToken(req);
     // verifies token and throws error if invalid
-    const { username } = jwt.verify(token, SECRET_KEY);
+    const { username } = jwt.verify(token, SECRET_KEY, JWT_OPTIONS);
 
     if (username === req.params.username) {
       // then store username for conveneince
@@ -73,7 +73,7 @@ async function ensureCorrectAuthor(req, res, next) {
   try {
     const token = getToken(req);
     // verifies token and throws error if invalid
-    const { username } = jwt.verify(token, SECRET_KEY);
+    const { username } = jwt.verify(token, SECRET_KEY, JWT_OPTIONS);
 
     // check if current logged in user is creator of story
     const { storyId } = req.params;
