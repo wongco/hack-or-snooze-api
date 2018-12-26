@@ -2,6 +2,7 @@
 const express = require('express');
 const router = new express.Router();
 const jwt = require('jsonwebtoken');
+const cors = require('cors');
 
 // class models
 const User = require('../models/User');
@@ -12,19 +13,28 @@ const { SECRET_KEY, JWT_OPTIONS } = require('../config');
 
 // import helper
 const validateJSONSchema = require('../helpers/validateJSONSchema');
+const validHTTPMethods = require('../helpers/validHTTPMethods');
 
 // json validation
 const signupPostSchema = require('../schemas/signupPostSchema.json');
 const loginPostSchema = require('../schemas/loginPostSchema.json');
 
+// allow CORS on all routes in this router page
+router.use(cors());
+
 /** base route - auth resources */
+
+/* --------------------------------------
+Rereference Route: /signup
+POST - /signup
+-------------------------------------- */
 
 /** POST - /signup
  * desc: create an account and receive token
  * input: { user: { name, username, password } }
  * output: { token, user: { userDetails } }
  */
-router.post('/signup', async (req, res, next) => {
+router.post('/signup', validHTTPMethods(['POST']), async (req, res, next) => {
   try {
     // if schema is invalid, throw error
     validateJSONSchema(req.body, signupPostSchema);
@@ -46,12 +56,17 @@ router.post('/signup', async (req, res, next) => {
   }
 });
 
+/* --------------------------------------
+Rereference Route: /login
+POST - /login
+-------------------------------------- */
+
 /** POST - /login
  * desc: Login to Receive a Token
  * input: { user: username, password }
  * output: { token, user: {userDetails} }
  */
-router.post('/login', async (req, res, next) => {
+router.post('/login', validHTTPMethods(['POST']), async (req, res, next) => {
   try {
     // if schema is invalid, throw error
     validateJSONSchema(req.body, loginPostSchema);

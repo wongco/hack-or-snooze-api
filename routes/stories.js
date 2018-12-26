@@ -1,5 +1,7 @@
+// npm modules
 const express = require('express');
 const router = new express.Router();
+const cors = require('cors');
 
 // class models
 const Story = require('../models/Story');
@@ -12,10 +14,23 @@ const storiesPostSchema = require('../schemas/storiesPostSchema.json');
 const storiesPatchSchema = require('../schemas/storiesPatchSchema.json');
 
 // import middleware
+const validHTTPMethods = require('../helpers/validHTTPMethods');
 const { ensureValidStoryId } = require('../middleware/stories');
 const { ensureLoggedIn, ensureCorrectAuthor } = require('../middleware/auth');
 
+// allow CORS on all routes in this router page
+router.use(cors());
+
 /** Base Route: /stories */
+
+/* --------------------------------------
+Rereference Route: /stories
+GET - /stories
+POST - /stories
+-------------------------------------- */
+
+// middleware - restrict http methods on '/stories' route
+router.all('/', validHTTPMethods(['GET', 'POST']));
 
 /** GET - /stories
  * desc: Get a List of Stories
@@ -49,13 +64,23 @@ router.post('/', ensureLoggedIn, async (req, res, next) => {
     // overwrite username from token. prevent abuse of username(author) field.
     req.body.story.username = req.username;
 
-    // operates under assumption user has been authenticated and checked in middlware
+    // user has been authenticated and checked in middlware
     const story = await Story.addStory(req.body.story);
     return res.json({ story });
   } catch (error) {
     return next(error);
   }
 });
+
+/* --------------------------------------
+Rereference Route: /stories/:storyID
+GET - /stories/:storyID
+PATCH - /stories/:storyID
+DELETE - /stories/:storyID
+-------------------------------------- */
+
+//  middleware - restrict http methods on '/stories/:storyId' route
+router.all('/:storyId', validHTTPMethods(['GET', 'PATCH', 'DELETE']));
 
 /** GET - /stories/:storyId
  * desc: Get a Story

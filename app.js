@@ -1,6 +1,7 @@
 /** Express app for hack-or-snooze-API */
 const express = require('express');
 const app = express();
+const validHTTPMethods = require('./helpers/validHTTPMethods');
 
 // don't provide http logging during automated tests
 if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'production') {
@@ -22,9 +23,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // routing control
-app.use(authRoutes);
+app.use('/', authRoutes);
 app.use('/users', usersRoutes);
 app.use('/stories', storiesRoutes);
+
+// restrict http methods on any undefined routes
+app.use(validHTTPMethods(['GET']));
 
 /** 404 handler */
 app.use(function(req, res, next) {

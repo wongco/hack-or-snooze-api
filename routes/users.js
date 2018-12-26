@@ -1,6 +1,7 @@
 // npm modules
 const express = require('express');
 const router = new express.Router();
+const cors = require('cors');
 
 // class models
 const User = require('../models/User');
@@ -12,10 +13,22 @@ const validateJSONSchema = require('../helpers/validateJSONSchema');
 const usersPatchSchema = require('../schemas/usersPatchSchema.json');
 
 // import middleware
+const validHTTPMethods = require('../helpers/validHTTPMethods');
 const { ensureLoggedIn, ensureCorrectUser } = require('../middleware/auth');
 const { ensureValidStoryId } = require('../middleware/stories');
 
+// allow CORS on all routes in this router page
+router.use(cors());
+
 /** Base Route: /users */
+
+/* --------------------------------------
+Rereference Route: /users
+/users - GET
+-------------------------------------- */
+
+// restrict http methods on '/users' route
+router.all('/', validHTTPMethods(['GET']));
 
 /* Authenticated Route - Token Required */
 /** GET - /users
@@ -31,6 +44,16 @@ router.get('/', ensureLoggedIn, async (req, res, next) => {
     return next(error);
   }
 });
+
+/* --------------------------------------
+Rereference Route: /users/username
+GET - /users/username
+PATCH - /users/username
+DELETE - /users/username
+-------------------------------------- */
+
+// restrict hhtp methods on '/users/username' route
+router.all('/:username', validHTTPMethods(['GET', 'PATCH', 'DELETE']));
 
 /* Authenticated Route - Token Required */
 /** GET - /users/:username
@@ -105,6 +128,18 @@ router.delete('/:username', ensureCorrectUser, async (req, res, next) => {
     return next(error);
   }
 });
+
+/* --------------------------------------
+Rereference Route: /users/username/favorites/storyId
+POST - /users/username/favorites/storyId
+DELETE - /users/username/favorites/storyId
+-------------------------------------- */
+
+// restrict http methods on '/:username/favorites/:storyId' route
+router.all(
+  '/:username/favorites/:storyId',
+  validHTTPMethods(['POST', 'DELETE'])
+);
 
 /* Authorized Route - Token Required, Correct User */
 /** POST - /users/:username/favorites/:storyId
