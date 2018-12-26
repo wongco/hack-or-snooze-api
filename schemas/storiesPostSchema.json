@@ -14,17 +14,8 @@
       "title": "The Story Schema",
       "default": null,
       "additionalProperties": false,
-      "required": ["username", "author", "title", "url"],
+      "required": ["author", "title", "url"],
       "properties": {
-        "username": {
-          "$id": "#/properties/story/properties/username",
-          "type": "string",
-          "title": "The Username Schema",
-          "default": "",
-          "examples": ["bob"],
-          "minLength": 1,
-          "pattern": "^(.*)$"
-        },
         "author": {
           "$id": "#/properties/story/properties/author",
           "type": "string",

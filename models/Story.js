@@ -56,10 +56,10 @@ class Story {
     validateSkipLimit(reqDetails, STORIES_LIST_LIMIT);
 
     const { skip, limit } = reqDetails;
-    const result = await db.query(`SELECT * FROM stories OFFSET $1 LIMIT $2`, [
-      skip,
-      limit
-    ]);
+    const result = await db.query(
+      `SELECT * FROM stories ORDER BY createdat DESC OFFSET $1 LIMIT $2`,
+      [skip, limit]
+    );
 
     // rename columns to match formatted output
     const stories = result.rows.map(storyDbDetail => {

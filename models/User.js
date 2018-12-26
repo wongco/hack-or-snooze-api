@@ -114,10 +114,24 @@ class User {
    * @return { Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
    */
   static async getUserOwnStories(username) {
-    const result = await db.query('SELECT * FROM stories where username = $1', [
-      username
-    ]);
-    return result.rows;
+    const dbStories = await db.query(
+      'SELECT * FROM stories where username = $1',
+      [username]
+    );
+
+    // map & deconstruct data for camelCase formatting
+    const stories = dbStories.rows.map(dbStory => {
+      const { createdat, updatedat, storyid, ...userDetails } = dbStory;
+
+      return {
+        ...userDetails,
+        storyId: storyid,
+        createdAt: createdat,
+        updatedAt: updatedat
+      };
+    });
+
+    return stories;
   }
 
   /** checkValidCreds - checks if a user's credentials are valid

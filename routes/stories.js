@@ -61,7 +61,7 @@ router.post('/', ensureLoggedIn, async (req, res, next) => {
   }
 
   try {
-    // overwrite username from token. prevent abuse of username(author) field.
+    // provide username from token
     req.body.story.username = req.username;
 
     // user has been authenticated and checked in middlware
