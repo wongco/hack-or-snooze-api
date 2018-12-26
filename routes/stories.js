@@ -13,6 +13,7 @@ const storiesPatchSchema = require('../schemas/storiesPatchSchema.json');
 
 // import middleware
 const { ensureValidStoryId } = require('../middleware/stories');
+const { ensureLoggedIn, ensureCorrectAuthor } = require('../middleware/auth');
 
 /** Base Route: /stories */
 
@@ -36,7 +37,7 @@ router.get('/', async (req, res, next) => {
  * input: token (header), { story: {username, author, title, url} }
  * output: { story: { storyDetails } }
  */
-router.post('/', async (req, res, next) => {
+router.post('/', ensureLoggedIn, async (req, res, next) => {
   try {
     // if schema is invalid, throw error
     validateJSONSchema(req.body, storiesPostSchema);
@@ -45,6 +46,9 @@ router.post('/', async (req, res, next) => {
   }
 
   try {
+    // overwrite username from token. prevent abuse of username(author) field.
+    req.body.story.username = req.username;
+
     // operates under assumption user has been authenticated and checked in middlware
     const story = await Story.addStory(req.body.story);
     return res.json({ story });
@@ -73,22 +77,27 @@ router.get('/:storyId', ensureValidStoryId, async (req, res, next) => {
  * input: token (header), { story: { author, title, url} }
  * output: { story: { storyDetails } }
  */
-router.patch('/:storyId', ensureValidStoryId, async (req, res, next) => {
-  try {
-    // if schema is invalid, throw error
-    validateJSONSchema(req.body, storiesPatchSchema);
-  } catch (err) {
-    return next(err);
-  }
+router.patch(
+  '/:storyId',
+  ensureValidStoryId,
+  ensureCorrectAuthor,
+  async (req, res, next) => {
+    try {
+      // if schema is invalid, throw error
+      validateJSONSchema(req.body, storiesPatchSchema);
+    } catch (err) {
+      return next(err);
+    }
 
-  try {
-    const { storyId } = req.params;
-    const story = await Story.patchStory(storyId, req.body.story);
-    return res.json({ story });
-  } catch (error) {
-    return next(error);
+    try {
+      const { storyId } = req.params;
+      const story = await Story.patchStory(storyId, req.body.story);
+      return res.json({ story });
+    } catch (error) {
+      return next(error);
+    }
   }
-});
+);
 
 /* Authorized Route - Token Required, Correct User */
 /** DELETE - /stories/:storyId
@@ -97,17 +106,22 @@ router.patch('/:storyId', ensureValidStoryId, async (req, res, next) => {
  * output: { message: "Story with ${storyId} successfully deleted"
  *           story: { storyDetails } }
  */
-router.delete('/:storyId', ensureValidStoryId, async (req, res, next) => {
-  try {
-    const { storyId } = req.params;
-    const story = await Story.deleteStory(storyId);
-    return res.json({
-      message: `Story with ID '${storyId}' successfully deleted.`,
-      story
-    });
-  } catch (error) {
-    return next(error);
+router.delete(
+  '/:storyId',
+  ensureValidStoryId,
+  ensureCorrectAuthor,
+  async (req, res, next) => {
+    try {
+      const { storyId } = req.params;
+      const story = await Story.deleteStory(storyId);
+      return res.json({
+        message: `Story with ID '${storyId}' successfully deleted.`,
+        story
+      });
+    } catch (error) {
+      return next(error);
+    }
   }
-});
+);
 
 module.exports = router;

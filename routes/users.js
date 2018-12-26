@@ -4,7 +4,6 @@ const router = new express.Router();
 
 // class models
 const User = require('../models/User');
-const APIError = require('../models/ApiError');
 
 // import helper
 const validateJSONSchema = require('../helpers/validateJSONSchema');
@@ -13,6 +12,7 @@ const validateJSONSchema = require('../helpers/validateJSONSchema');
 const usersPatchSchema = require('../schemas/usersPatchSchema.json');
 
 // import middleware
+const { ensureLoggedIn, ensureCorrectUser } = require('../middleware/auth');
 const { ensureValidStoryId } = require('../middleware/stories');
 
 /** Base Route: /users */
@@ -23,8 +23,7 @@ const { ensureValidStoryId } = require('../middleware/stories');
  * input: token (header), optional - { skip, limit }
  * output: { users: [{ createdAt, name, updatedAt, username}, ...]}
  */
-router.get('/', async (req, res, next) => {
-  // console.log(req.headers);
+router.get('/', ensureLoggedIn, async (req, res, next) => {
   try {
     const users = await User.getUsers(req.query);
     return res.json({ users });
@@ -44,7 +43,7 @@ router.get('/', async (req, res, next) => {
  *                    updatedAt,
  *                    username } }
  */
-router.get('/:username', async (req, res, next) => {
+router.get('/:username', ensureLoggedIn, async (req, res, next) => {
   try {
     const { username } = req.params;
     const user = await User.getUser(username);
@@ -65,7 +64,7 @@ router.get('/:username', async (req, res, next) => {
  *                    updatedAt,
  *                    username } }
  */
-router.patch('/:username', async (req, res, next) => {
+router.patch('/:username', ensureCorrectUser, async (req, res, next) => {
   try {
     // if schema is invalid, throw error
     validateJSONSchema(req.body, usersPatchSchema);
@@ -94,7 +93,7 @@ router.patch('/:username', async (req, res, next) => {
  *                    updatedAt,
  *                    username } }
  */
-router.delete('/:username', async (req, res, next) => {
+router.delete('/:username', ensureCorrectUser, async (req, res, next) => {
   try {
     const { username } = req.params;
     const user = await User.deleteUser(username);
@@ -122,6 +121,7 @@ router.delete('/:username', async (req, res, next) => {
 router.post(
   '/:username/favorites/:storyId',
   ensureValidStoryId,
+  ensureCorrectUser,
   async (req, res, next) => {
     try {
       const { username, storyId } = req.params;
@@ -148,6 +148,7 @@ router.post(
 router.delete(
   '/:username/favorites/:storyId',
   ensureValidStoryId,
+  ensureCorrectUser,
   async (req, res, next) => {
     try {
       const { username, storyId } = req.params;
