@@ -49,23 +49,29 @@ You will need to have the following items installed in order to run this program
 
 3. Install the postgresql schema tables onto your database.
 
-   For production database:
+	- (Note, any of the steps below will reset and drop your existing tables)
 
-   ```
-   psql hack-or-snooze < data.sql
-   ```
+  For production database:
 
-   For test database:
+  ```
+  psql hack-or-snooze < data.sql
+  ```
 
-   ```
-   psql hack-or-snooze-test < data.sql
-   ```
+  For test database:
 
-   If you want to load sample data on your database, run the following command:
+  ```
+  psql hack-or-snooze-test < data.sql
+  ```
 
-   ```
-   npm run dbrefresh
-   ```
+  If you want to load sample data on your database, run the following command:
+
+  ```
+  npm run dbrefresh
+  ```
+
+4. (Optional) - Twilio SMS Recovery Routes are unavailable unless a .env file or environmental variables are set with the appropriate Twilio Account Keys. Please see the config.js file for reference. Sign up at Twilio for a trial account to test them out.
+
+	[https://www.twilio.com](https://www.twilio.com)
 
 ## Running Tests
 
@@ -87,6 +93,8 @@ You will need to have the following items installed in order to run this program
 - DELETE - /users/username
 - POST - /users/username/favorites/storyId
 - DELETE - /users/username/favorites/storyId
+- POST - /users/username/recovery
+- PATCH - /users/username/recovery
 
 ### Stories
 
@@ -100,11 +108,15 @@ You will need to have the following items installed in order to run this program
 
 - Node.js - Server Language
 - express.js - Node Web Framework
+- PostgreSQL - SQL Database
 - dotenv - Env Variable Parser
 - bcrypt - Password Encryption Library
 - jsonschema - JSON Validation Library
 - jsonwebtoken - JSON Web Token
+- cors - Cross Origin Resource Sharing Library
 - pg - PostgreSQL client for Node.js
+- phone - Phone Number Validation Library
+- twilio - Programmable SMS - (Account Signup Required)
 
 Testing stack:
 

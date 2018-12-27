@@ -23,7 +23,7 @@
     "jsonschema": "1.2.4",
     "jsonwebtoken": "8.4.0",
     "pg": "7.7.1",
-    "phone": "^2.3.0",
+    "phone": "2.3.0",
     "twilio": "3.26.0"
   },
   "engines": {
