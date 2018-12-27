@@ -3,6 +3,7 @@
 // npm modules
 const db = require('../db');
 const bcrypt = require('bcrypt');
+const normalizePhoneNum = require('phone');
 
 // class models
 const APIError = require('./ApiError');
@@ -56,6 +57,11 @@ class User {
       );
     }
 
+    // if phone number was passed, validate
+    if (phone) {
+      phone = User.formatPhoneNumber(phone);
+    }
+
     // create hashed password with bcrypt
     const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_ROUNDS);
     const result = await db.query(
@@ -79,6 +85,24 @@ class User {
       favorites,
       stories
     };
+  }
+
+  /** @description formatPhoneNumber - formats phone into standard format
+   * @param {string} phone
+   * @return {string} phone - Ex: +14151231234
+   */
+  static formatPhoneNumber(phone) {
+    // retrieve valid USA phone numbers only
+    const result = normalizePhoneNum(phone, 'USA');
+    // could not recognize USA phone number
+    if (result.length === 0) {
+      throw new APIError(
+        'Please input a valid USA phone number.',
+        400,
+        'Invalid Input'
+      );
+    }
+    return result[0];
   }
 
   /** @description isUsernameValidFromToken - validate user exists from good token
@@ -235,6 +259,11 @@ class User {
 
     // add timestamp to be updated
     userUpdateDetails.updatedat = new Date();
+
+    // if phone number was passed, validate
+    if (userUpdateDetails.phone) {
+      userUpdateDetails.phone = User.formatPhoneNumber(userUpdateDetails.phone);
+    }
 
     // if password change is requested, hash password
     if (userUpdateDetails.password) {

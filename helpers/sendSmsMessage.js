@@ -14,8 +14,8 @@ async function sendSmsMessage(targetNumber, message) {
   try {
     await twilioClient.messages.create({
       body: message,
-      from: `+${TWILIO_NUMBER}`,
-      to: `+${targetNumber}`
+      from: `${TWILIO_NUMBER}`,
+      to: `${targetNumber}`
     });
 
     console.log('SMS Recovery Message Sent.');
