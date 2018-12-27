@@ -18,7 +18,7 @@ const { BCRYPT_WORK_ROUNDS, USERS_LIST_LIMIT } = require('../config');
 /** User on the site */
 
 class User {
-  /** addUser - adds a user to the database
+  /** @description addUser - adds a user to the database
    * @property {object} user
    * @property {string} user.username
    * @property {string} user.name
@@ -66,7 +66,7 @@ class User {
     };
   }
 
-  /** getUserDbInfo - gets a specific user's info from the db
+  /** @description getUserDbInfo - gets a specific user's info from the db
    * @param {string} username
    * @return {Promise <{username, name, createdAt, updatedAt}>}
    */
@@ -84,7 +84,7 @@ class User {
     return result.rows[0];
   }
 
-  /** getUser - gets a specific user's info formatted nicely for JSON resp.
+  /** @description getUser - gets a specific user's info formatted nicely for JSON resp.
    * @param {string} username
    * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
    * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
@@ -109,11 +109,14 @@ class User {
     };
   }
 
-  /** getUserOwnStories - gets stories created by a specific user
+  /** @description getUserOwnStories - gets stories created by a specific user
    * @param {string} username
    * @return { Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
    */
   static async getUserOwnStories(username) {
+    // check if user exists, else throw error
+    await User.getUserDbInfo(username);
+
     const dbStories = await db.query(
       'SELECT * FROM stories where username = $1',
       [username]
@@ -134,7 +137,7 @@ class User {
     return stories;
   }
 
-  /** checkValidCreds - checks if a user's credentials are valid
+  /** @description checkValidCreds - checks if a user's credentials are valid
    * @param {string} username
    * @param {string} inputPassword
    */
@@ -157,7 +160,7 @@ class User {
     return true;
   }
 
-  /** getUsers - returns list of all users in db filtered by criteria.
+  /** @description getUsers - returns list of all users in db filtered by criteria.
    * @property {object} reqDetails (optional properties below)
    * @property {integer} reqDetails.skip
    * @property {integer} reqDetails.limit
@@ -240,11 +243,14 @@ class User {
     return user;
   }
 
-  /** getUserFavorites - get user's favorites stories
+  /** @description getUserFavorites - get user's favorites stories
    * @param {string} username
    * @return {Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
    */
   static async getUserFavorites(username) {
+    // check if user exists, else throw error
+    await User.getUserDbInfo(username);
+
     const dbStories = await db.query(
       `SELECT s.storyid, s.title, s.url, s.author, s.username, s.createdat, s.updatedat
        FROM favorites as f
@@ -269,12 +275,15 @@ class User {
     return stories;
   }
 
-  /** addFavorite - add storyId to user's favorite stories
+  /** @description addFavorite - add storyId to user's favorite stories
    * @param {string} username
    * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
    * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
    */
   static async addFavorite(username, storyId) {
+    // check if user exists, else throw error
+    await User.getUserDbInfo(username);
+
     // check if story exists
     await Story.getStoryDbInfo(storyId);
 
@@ -297,12 +306,15 @@ class User {
     return user;
   }
 
-  /** deleteFavorite - delete storyId from user's favorite stories
+  /** @description deleteFavorite - delete storyId from user's favorite stories
    * @param {string} username
    * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
    * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
    */
   static async deleteFavorite(username, storyId) {
+    // check if user exists, else throw error
+    await User.getUserDbInfo(username);
+
     // check if story exists
     await Story.getStoryDbInfo(storyId);
 
@@ -323,6 +335,40 @@ class User {
 
     const user = await User.getUser(username);
     return user;
+  }
+
+  // TODO
+  /** @description sendRecoveryRequest - send SMS recovery request
+   * @param {string} username
+   * @return {boolean}}
+   */
+  static async sendRecoveryRequest(username) {
+    // check if user exists
+    const result = await db.query(`SELECT * FROM users WHERE username = $1`, [
+      username
+    ]);
+
+    // check if user does not exists, silent fail, log to server
+    if (result.rows.length === 0) {
+      console.log(
+        'Fail Condition: SMS Recovery for Non-existing user was requested.'
+      );
+      return false;
+    }
+
+    // extract user phone # and if does not exist, silent fail, log to server
+    const { targetNumber } = result.rows[0];
+    if (!targetNumber) {
+      console.log('Fail Condition: SMS Number does not exist for user.');
+      return false;
+    }
+
+    // if current sms code has not expired, remove old one and create new one
+    // generate new code, send to sms
+    //    if phone number exists, validate and then send
+    // come back and give json response
+
+    return true;
   }
 }
 

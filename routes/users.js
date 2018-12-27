@@ -195,4 +195,46 @@ router.delete(
   }
 );
 
+/* --------------------------------------
+Rereference Route: /users/username/recovery
+POST /users/username/recovery
+PATCH /users/username/recovery
+-------------------------------------- */
+
+// restrict http methods on '/:username/recovery' route
+router.all('/:username/recovery', validHTTPMethods(['POST', 'PATCH']));
+
+/** POST - /:username/recovery
+ * desc: request SMS recovery code for specific username
+ * input: { user: username }
+ * output: { message: 'Request Acknowledged.' }
+ */
+router.post('/:username/recovery', async (req, res, next) => {
+  try {
+    const { username } = req.params;
+    await User.sendRecoveryRequest(username);
+    return res.json({
+      message: `SMS recovery for user: '${username}' acknowledged.`
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/** PATCH - /:username/recovery
+ * desc: resets password based on recovery code and updates new password
+ * input: { user: code, password }
+ * output: { message: 'Request Acknowledged.' }
+ */
+router.patch('/:username/recovery', async (req, res, next) => {
+  try {
+    const { username } = req.params;
+    return res.json({
+      message: `Successfully updated password.`
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 module.exports = router;

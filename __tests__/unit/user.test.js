@@ -135,8 +135,11 @@ describe('getUserOwnStories method', async () => {
   });
 
   it('getting stories for non exisiting user returns no results', async () => {
-    const stories = await User.getUserOwnStories('jimmy');
-    expect(stories).toHaveLength(0);
+    try {
+      await User.getUserOwnStories('jimmy');
+    } catch (error) {
+      expect(error).toHaveProperty('title', 'User Not Found');
+    }
   });
 });
 
@@ -261,8 +264,11 @@ describe('getUserFavorites method', async () => {
   });
 
   it('no results for non-existent user', async () => {
-    const stories = await User.getUserFavorites('kevino');
-    expect(stories).toHaveLength(0);
+    try {
+      await User.getUserFavorites('kevino');
+    } catch (error) {
+      expect(error).toHaveProperty('title', 'User Not Found');
+    }
   });
 });
 
@@ -294,10 +300,7 @@ describe('addFavorite method', async () => {
       const storyId = stories[0].storyId;
       await User.addFavorite('jeremiah', storyId);
     } catch (error) {
-      expect(error).toHaveProperty(
-        'message',
-        'insert or update on table "favorites" violates foreign key constraint "favorites_username_fkey"'
-      );
+      expect(error).toHaveProperty('title', 'User Not Found');
     }
   });
 });

@@ -112,8 +112,7 @@ describe('POST /stories', async () => {
         story: {
           title: 'How to cook dinner.',
           url: 'http://www.recipeguide.com',
-          author: 'Bobby',
-          username: 'bob'
+          author: 'Bobby'
         }
       });
 
@@ -188,7 +187,7 @@ describe('PATCH /stories/:storyId', async () => {
   it('Updated specific story succeeded with valid storyId and params', async () => {
     const response = await request(app).get('/stories');
     const { stories } = response.body;
-    const storyId = stories[0].storyId;
+    const storyId = stories[stories.length - 1].storyId;
 
     const response2 = await request(app)
       .patch(`/stories/${storyId}`)
@@ -225,7 +224,7 @@ describe('PATCH /stories/:storyId', async () => {
   it('Failed to update story due to invalid parameters', async () => {
     const response = await request(app).get('/stories');
     const { stories } = response.body;
-    const storyId = stories[0].storyId;
+    const storyId = stories[stories.length - 1].storyId;
 
     const response2 = await request(app)
       .patch(`/stories/${storyId}`)
@@ -247,7 +246,7 @@ describe('PATCH /stories/:storyId', async () => {
   it('Failed to update story due to not being author', async () => {
     const response = await request(app).get('/stories');
     const { stories } = response.body;
-    const storyId = stories[0].storyId;
+    const storyId = stories[stories.length - 1].storyId;
 
     const response2 = await request(app)
       .patch(`/stories/${storyId}`)
@@ -292,7 +291,7 @@ describe('DELETE /stories/:storyId', async () => {
   it('Deleted specific story successfully', async () => {
     const response = await request(app).get('/stories');
     const { stories } = response.body;
-    const storyId = stories[0].storyId;
+    const storyId = stories[stories.length - 1].storyId;
 
     const response2 = await request(app)
       .delete(`/stories/${storyId}`)

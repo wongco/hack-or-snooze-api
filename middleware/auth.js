@@ -9,6 +9,7 @@ const { SECRET_KEY, JWT_OPTIONS } = require('../config');
 // class models
 const Story = require('../models/Story');
 const APIError = require('../models/ApiError');
+const User = require('../models/User');
 
 /** helper for auth middlware, obtain jwt from header */
 function getToken(req) {
@@ -31,12 +32,15 @@ function getToken(req) {
 }
 
 /** Middleware: Requires user is logged in. */
-function ensureLoggedIn(req, res, next) {
+async function ensureLoggedIn(req, res, next) {
   try {
     const token = getToken(req);
 
     // verifies token and throws error if invalid
     const { username } = jwt.verify(token, SECRET_KEY, JWT_OPTIONS);
+
+    // check if user exists
+    await User.getUserDbInfo(username);
 
     // then store username for conveneince
     req.username = username;
@@ -47,11 +51,14 @@ function ensureLoggedIn(req, res, next) {
   }
 }
 
-function ensureCorrectUser(req, res, next) {
+async function ensureCorrectUser(req, res, next) {
   try {
     const token = getToken(req);
     // verifies token and throws error if invalid
     const { username } = jwt.verify(token, SECRET_KEY, JWT_OPTIONS);
+
+    // check if user exists
+    await User.getUserDbInfo(username);
 
     if (username === req.params.username) {
       // then store username for conveneince
@@ -74,6 +81,9 @@ async function ensureCorrectAuthor(req, res, next) {
     const token = getToken(req);
     // verifies token and throws error if invalid
     const { username } = jwt.verify(token, SECRET_KEY, JWT_OPTIONS);
+
+    // check if user exists
+    await User.getUserDbInfo(username);
 
     // check if current logged in user is creator of story
     const { storyId } = req.params;

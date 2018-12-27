@@ -146,7 +146,7 @@ describe('addStory method', async () => {
 describe('getStoryDbInfo method', async () => {
   it('getting info for a specific story succeeded', async () => {
     const stories = await Story.getStories({});
-    const storyId = stories[0].storyId;
+    const storyId = stories[stories.length - 1].storyId;
 
     const story = await Story.getStoryDbInfo(storyId);
     expect(story).toHaveProperty('username', 'bob');
@@ -166,7 +166,7 @@ describe('getStoryDbInfo method', async () => {
 describe('getStory method', async () => {
   it('getting info for a specific story succeeded', async () => {
     const stories = await Story.getStories({});
-    const storyId = stories[0].storyId;
+    const storyId = stories[stories.length - 1].storyId;
 
     const story = await Story.getStory(storyId);
     expect(story).toHaveProperty('username', 'bob');
@@ -186,7 +186,7 @@ describe('getStory method', async () => {
 describe('patchStory method', async () => {
   it('patching a specific story succeeded', async () => {
     const stories = await Story.getStories({});
-    const storyId = stories[0].storyId;
+    const storyId = stories[stories.length - 1].storyId;
 
     const story = await Story.patchStory(storyId, {
       title: 'How to eat cookies well!.',
@@ -230,7 +230,7 @@ describe('patchStory method', async () => {
 describe('deleteStory method', async () => {
   it('deleting a specific story succeeded', async () => {
     const stories = await Story.getStories({});
-    const storyId = stories[0].storyId;
+    const storyId = stories[stories.length - 1].storyId;
 
     const story = await Story.deleteStory(storyId);
 

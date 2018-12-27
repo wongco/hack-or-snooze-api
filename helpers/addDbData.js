@@ -25,6 +25,7 @@ async function createTables() {
     username text PRIMARY KEY,
     name text NOT NULL,
     password text NOT NULL,
+    phone text,
     createdAt timestamp DEFAULT current_timestamp NOT NULL,
     updatedAt timestamp DEFAULT current_timestamp NOT NULL
   )`);
