@@ -10,6 +10,9 @@ const db = require('../../db');
 
 beforeEach(async () => {
   // delete any data created by prior tests
+  await db.query('DELETE FROM recovery');
+  await db.query('DELETE FROM favorites');
+  await db.query('DELETE FROM stories');
   await db.query('DELETE FROM users');
 
   await User.addUser({

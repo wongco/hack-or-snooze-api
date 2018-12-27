@@ -5,6 +5,7 @@
   "type": "object",
   "title": "The Root Schema",
   "default": null,
+  "minProperties": 1,
   "additionalProperties": false,
   "required": ["user"],
   "properties": {
@@ -13,8 +14,8 @@
       "type": "object",
       "title": "The User Schema",
       "default": null,
+      "minProperties": 1,
       "additionalProperties": false,
-      "required": ["name", "password"],
       "properties": {
         "name": {
           "$id": "#/properties/user/properties/name",
@@ -39,7 +40,7 @@
           "type": "string",
           "title": "The Phone Schema",
           "default": "",
-          "examples": ["12341231234"],
+          "examples": ["12342341234"],
           "pattern": "^(.*)$"
         }
       }

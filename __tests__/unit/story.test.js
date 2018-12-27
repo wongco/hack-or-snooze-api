@@ -7,6 +7,8 @@ const Story = require('../../models/Story');
 
 beforeEach(async () => {
   // delete any data created by test in case of crash
+  await db.query('DELETE FROM recovery');
+  await db.query('DELETE FROM favorites');
   await db.query('DELETE FROM stories');
   await db.query('DELETE FROM users');
 
