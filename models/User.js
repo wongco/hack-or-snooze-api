@@ -16,6 +16,7 @@ const sqlForPartialUpdate = require('../helpers/partialUpdate');
 const {
   BCRYPT_WORK_ROUNDS,
   USERS_LIST_LIMIT,
+  RECCODE_EXP_IN_MINS,
   TWILIO_ENABLED
 } = require('../config');
 
@@ -370,9 +371,9 @@ class User {
 
   /** @description isRecoveryInfoValid - check user and phone info
    * @param {string} username
-   * @return {boolean}}
+   * @return {Promise <boolean>}}
    */
-  static async isRecoveryInfoValid(username) {
+  static async canRecoveryBeInitiated(username) {
     // check if user exists
     const dbUserResult = await db.query(
       `SELECT * FROM users WHERE username = $1`,
@@ -393,16 +394,16 @@ class User {
       console.log('Fail Condition: SMS Number does not exist for user.');
       return false;
     }
-
     return true;
   }
 
   /** @description sendRecoveryRequest - send SMS recovery request (Req Twilio)
    * @param {string} username
-   * @return {boolean}}
+   * @return {Promise <boolean>}}
    */
   static async sendRecoveryRequest(username) {
-    if (!User.isRecoveryInfoValid(username)) {
+    // if there are any errors, exit of of func immediately
+    if (!(await User.canRecoveryBeInitiated(username))) {
       return false;
     }
 
@@ -435,6 +436,88 @@ class User {
       `\nHack-or-Snooze Recovery Code: ${recCode}\n\nCode expires in 10 minutes.`
     );
 
+    return true;
+  }
+
+  /** @description Helper for resetPassword - Verifies Recovery Info Exists for User
+   * @param {string} username
+   * @return {Promise <{ username, code, createdat }>}}
+   */
+  static async getRecoveryCodeInfo(username) {
+    const result = await db.query(
+      'SELECT * FROM recovery WHERE username = $1',
+      [username]
+    );
+
+    // check if recovery info exists in recovery database
+    if (result.rows.length === 0) {
+      throw new APIError(
+        'Recovery information is invalid.',
+        400,
+        'Recovery failed'
+      );
+    }
+    return result;
+  }
+
+  /** @description Helper for resetPassword - Verifies Recovery Time Expiration
+   * @param {string} username
+   * @param {date} createdTime
+   */
+  static async checkRecoveryTimeValidity(username, createdTime) {
+    const currentTime = new Date();
+    const timeDifferenceInMins = (currentTime - createdTime) / 1000 / 60;
+
+    // check if more than RECCODE_EXP_IN_MINS minutes has elapsed (Code has expired)
+    if (timeDifferenceInMins > RECCODE_EXP_IN_MINS) {
+      // code has expired - delete old recovery entry
+      await db.query('DELETE FROM recovery WHERE username = $1', [username]);
+      throw new APIError(
+        'Recovery information is invalid.',
+        400,
+        'Recovery failed'
+      );
+    }
+  }
+
+  /** @description Helper for resetPassword - Verifies RecoveryCode
+   * @param {string} inputCode
+   * @param {string} recoveryHashedCode
+   */
+  static async checkRecoveryCodeValidity(inputCode, recoveryHashedCode) {
+    const isValid = await bcrypt.compare(inputCode, recoveryHashedCode);
+    if (!isValid) {
+      throw new APIError(
+        'Recovery information is invalid.',
+        400,
+        'Recovery failed'
+      );
+    }
+  }
+
+  /** @description resetPassword - reset user password with code (Req Twilio)
+   * @param {string} username
+   * @param {string} code
+   * @param {string} password
+   * @return {Promise <boolean>}}
+   */
+  static async resetPassword(username, inputCode, newPassword) {
+    // obtain recovery info, if does not exist, throw error
+    const result = await User.getRecoveryCodeInfo(username);
+
+    // check if recovery time has not expired, else throw error
+    const createdTime = result.rows[0].createdat;
+    await User.checkRecoveryTimeValidity(username, createdTime);
+
+    // check if inputCode is correct, else throw error
+    const recoveryHashedCode = result.rows[0].code;
+    await User.checkRecoveryCodeValidity(inputCode, recoveryHashedCode);
+
+    // code is valid, update password and delete recovery info
+    await User.patchUser(username, {
+      password: newPassword
+    });
+    await db.query('DELETE FROM recovery WHERE username = $1', [username]);
     return true;
   }
 }

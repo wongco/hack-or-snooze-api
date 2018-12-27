@@ -11,6 +11,7 @@ const validateJSONSchema = require('../helpers/validateJSONSchema');
 
 // json validation
 const usersPatchSchema = require('../schemas/usersPatchSchema.json');
+const usersRecPatchSchema = require('../schemas/usersRecPatchSchema.json');
 
 // import middleware
 const validHTTPMethods = require('../helpers/validHTTPMethods');
@@ -211,18 +212,22 @@ if (TWILIO_ENABLED) {
 
   /** POST - /:username/recovery
    * desc: request SMS recovery code for specific username
-   * input: { user: username }
+   * input: username (param)
    * output: { message: 'Request Acknowledged.' }
    */
   router.post('/:username/recovery', async (req, res, next) => {
+    const { username } = req.params;
     try {
-      const { username } = req.params;
       await User.sendRecoveryRequest(username);
       return res.json({
         message: `SMS recovery for user: '${username}' acknowledged.`
       });
     } catch (error) {
-      return next(error);
+      // log error silently, give user same message
+      console.log(`error: ${error.message}`);
+      return res.json({
+        message: `SMS recovery for user: '${username}' acknowledged.`
+      });
     }
   });
 
@@ -233,7 +238,16 @@ if (TWILIO_ENABLED) {
    */
   router.patch('/:username/recovery', async (req, res, next) => {
     try {
+      // if schema is invalid, throw error
+      validateJSONSchema(req.body, usersRecPatchSchema);
+    } catch (err) {
+      return next(err);
+    }
+
+    try {
       const { username } = req.params;
+      const { code, password } = req.body.user;
+      await User.resetPassword(username, code, password);
       return res.json({
         message: `Successfully updated password.`
       });
