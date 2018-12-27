@@ -5,6 +5,12 @@ const User = require('../../models/User');
 const Story = require('../../models/Story');
 const db = require('../../db');
 
+//import config
+const { BCRYPT_WORK_ROUNDS } = require('../../config');
+
+// import npm
+const bcrypt = require('bcrypt');
+
 beforeEach(async () => {
   // delete any data created by test in case of crash
   await db.query('DELETE FROM recovery');
@@ -15,7 +21,8 @@ beforeEach(async () => {
   await User.addUser({
     username: 'bob',
     name: 'Bobby',
-    password: '123456'
+    password: '123456',
+    phone: '1-415-123-1234'
   });
 
   await User.addUser({
@@ -92,6 +99,24 @@ describe('addUser method', async () => {
       expect(error).toHaveProperty(
         'message',
         `There is already a user with username 'bob'.`
+      );
+    }
+  });
+});
+
+describe('formatPhoneNumber method', () => {
+  it('formatting a regular number USA # succeeded', () => {
+    const phone = User.formatPhoneNumber('415-123-1234');
+    expect(phone).toBe('+14151231234');
+  });
+
+  it('failed to format number due to wrong digits/format/non-usa', () => {
+    try {
+      User.formatPhoneNumber('11-415-1263-12634');
+    } catch (error) {
+      expect(error).toHaveProperty(
+        'message',
+        'Please input a valid USA phone number.'
       );
     }
   });
@@ -337,6 +362,177 @@ describe('deleteFavorite method', async () => {
       await User.deleteFavorite('jeremiah', storyId);
     } catch (error) {
       expect(error).toHaveProperty('message', "No user 'jeremiah' found.");
+    }
+  });
+});
+
+describe('canRecoveryBeInitiated method', async () => {
+  it('returns true with valid recovery record', async () => {
+    const recCode = '654321';
+    const hashedRecCode = await bcrypt.hash(recCode, BCRYPT_WORK_ROUNDS);
+    await db.query('INSERT INTO recovery (username, code) VALUES ($1, $2)', [
+      'bob',
+      hashedRecCode
+    ]);
+
+    expect(await User.canRecoveryBeInitiated('bob')).toBe(true);
+  });
+
+  it('failed to no phone number existing for user', async () => {
+    expect(await User.canRecoveryBeInitiated('jas')).toBe(false);
+  });
+
+  it('failed to no user not existing', async () => {
+    expect(await User.canRecoveryBeInitiated('jeromess')).toBe(false);
+  });
+});
+
+describe('createDbRecoveryEntry method', async () => {
+  it('obtain phone number and recovery code successfully', async () => {
+    const recoveryInfo = await User.createDbRecoveryEntry('bob');
+    const { phone, recCode } = recoveryInfo;
+
+    expect(phone).toBe('+14151231234');
+    expect(recCode).toHaveLength(6);
+  });
+
+  it('fail to create db record for invalid user', async () => {
+    try {
+      await User.createDbRecoveryEntry('jerommmeeee');
+    } catch (error) {
+      expect(error).toHaveProperty('message');
+    }
+  });
+
+  it('successive recovery attempts creates different codes', async () => {
+    const recoveryInfo = await User.createDbRecoveryEntry('bob');
+    const recCode = recoveryInfo.recCode;
+
+    const recoveryInfo2 = await User.createDbRecoveryEntry('bob');
+    const recCode2 = recoveryInfo2.recCode;
+
+    expect(recCode).not.toBe(recCode2);
+  });
+});
+
+describe('getRecoveryCodeInfo method', async () => {
+  it('gets recovery info successfully', async () => {
+    await User.createDbRecoveryEntry('bob');
+    const result = await User.getRecoveryCodeInfo('bob');
+    expect(result).toHaveProperty('username', 'bob');
+    expect(result).toHaveProperty('code');
+  });
+
+  it('fail to get recovery info due to user not existing', async () => {
+    try {
+      await User.getRecoveryCodeInfo('jeremyyyyyy');
+    } catch (error) {
+      expect(error).toHaveProperty('title', 'Recovery failed');
+    }
+  });
+});
+
+describe('checkRecoveryTimeValidity method', async () => {
+  it('time is within recovery window', async () => {
+    const timeFiveMinutesAgo = new Date() - 1000 * 60 * 5;
+    const isTimeValid = await User.checkRecoveryTimeValidity(
+      'bob',
+      timeFiveMinutesAgo
+    );
+
+    expect(isTimeValid).toBe(true);
+  });
+
+  it('failed due to time windows not being valid (time > 10 min default)', async () => {
+    // create recovery entry
+    await User.createDbRecoveryEntry('bob');
+
+    const timeTwelveMinutesAgo = new Date() - 1000 * 60 * 12;
+    try {
+      await User.checkRecoveryTimeValidity('bob', timeTwelveMinutesAgo);
+    } catch (error) {
+      expect(error).toHaveProperty('title', 'Recovery failed');
+      const result = await db.query(
+        'SELECT * FROM recovery WHERE username = $1',
+        ['bob']
+      );
+      // make sure recovery record was deleted
+      expect(result.rows).toHaveLength(0);
+    }
+  });
+});
+
+describe('checkRecoveryCodeValidity method', async () => {
+  it('code was successfully validated', async () => {
+    // create entry and get recCode
+    const result = await User.createDbRecoveryEntry('bob');
+    const { recCode } = result;
+
+    // pull from db and get recCodeHash
+    const recInfo = await User.getRecoveryCodeInfo('bob');
+    const recoveryHashedCode = recInfo.code;
+
+    const isValid = await User.checkRecoveryCodeValidity(
+      recCode,
+      recoveryHashedCode
+    );
+
+    expect(isValid).toBe(true);
+  });
+
+  it('failed due to recoveryCode being incorrect', async () => {
+    // create entry and get recCode
+    await User.createDbRecoveryEntry('bob');
+
+    // pull from db and get recCodeHash
+    const recInfo = await User.getRecoveryCodeInfo('bob');
+    const recoveryHashedCode = recInfo.code;
+
+    try {
+      await User.checkRecoveryCodeValidity('000000', recoveryHashedCode);
+    } catch (error) {
+      expect(error).toHaveProperty('title', 'Recovery failed');
+    }
+  });
+});
+
+describe('resetPassword method', async () => {
+  it('password was reset successfully', async () => {
+    // create entry and get recCode
+    const result = await User.createDbRecoveryEntry('bob');
+    const { recCode } = result;
+
+    // completed successfully
+    const completed = await User.resetPassword('bob', recCode, 'fedcba');
+    expect(completed).toBe(true);
+
+    // make sure recovery record was deleted
+    const result2 = await db.query(
+      'SELECT * FROM recovery WHERE username = $1',
+      ['bob']
+    );
+    expect(result2.rows).toHaveLength(0);
+
+    // check new password is valid
+    const isValid = await User.checkValidCreds('bob', 'fedcba');
+    expect(isValid).toBe(true);
+  });
+
+  it('failed to reset password due to non existing user', async () => {
+    try {
+      await User.resetPassword('jerrrreeeeemy', '000000', 'fedcba');
+    } catch (error) {
+      expect(error).toHaveProperty('title', 'Recovery failed');
+    }
+  });
+
+  it('failed to reset password due to bad recovery Code', async () => {
+    // create entry and get recCode
+    await User.createDbRecoveryEntry('bob');
+    try {
+      await User.resetPassword('bob', '000000', 'fedcba');
+    } catch (error) {
+      expect(error).toHaveProperty('title', 'Recovery failed');
     }
   });
 });

@@ -412,6 +412,18 @@ describe('DELETE /users/:username/favorites/:storyId', async () => {
   });
 });
 
+describe('POST /users/:username/recovery', async () => {
+  it('requesting password SMS recovery will always result in same message', async () => {
+    const response = await request(app).post('/users/jas/recovery');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toHaveProperty(
+      'message',
+      "SMS recovery for user: 'jas' acknowledged."
+    );
+  });
+});
+
 afterAll(async function() {
   // close db connection
   await db.end();

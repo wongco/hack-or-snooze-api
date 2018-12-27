@@ -57,7 +57,7 @@ class User {
       );
     }
 
-    // if phone number was passed, validate
+    // if phone number was passed, validate, convert to E.164
     if (phone) {
       phone = User.formatPhoneNumber(phone);
     }
@@ -87,7 +87,7 @@ class User {
     };
   }
 
-  /** @description formatPhoneNumber - formats phone into standard format
+  /** @description formatPhoneNumber - formats phone into E.164 format
    * @param {string} phone
    * @return {string} phone - Ex: +14151231234
    */
@@ -260,7 +260,7 @@ class User {
     // add timestamp to be updated
     userUpdateDetails.updatedat = new Date();
 
-    // if phone number was passed, validate
+    // if phone number was passed, validate, convert to E.164
     if (userUpdateDetails.phone) {
       userUpdateDetails.phone = User.formatPhoneNumber(userUpdateDetails.phone);
     }
@@ -412,7 +412,7 @@ class User {
     // check if user does not exists, silent fail, log to server
     if (dbUserResult.rows.length === 0) {
       console.log(
-        'Fail Condition: SMS Recovery for Non-existing user was requested.'
+        'Fail Condition (Log to Server): SMS Recovery for Non-existing user was requested.'
       );
       return false;
     }
@@ -420,22 +420,19 @@ class User {
     // extract user phone # and if does not exist, silent fail, log to server
     const { phone } = dbUserResult.rows[0];
     if (!phone) {
-      console.log('Fail Condition: SMS Number does not exist for user.');
+      console.log(
+        'Fail Condition (Log to Server): SMS Number does not exist for requested user.'
+      );
       return false;
     }
     return true;
   }
 
-  /** @description sendRecoveryRequest - send SMS recovery request (Req Twilio)
+  /** @description createDbRecoveryEntry - create recovery info for user
    * @param {string} username
-   * @return {Promise <boolean>}}
+   * @return {Promise <{ phone, recCode }>}}
    */
-  static async sendRecoveryRequest(username) {
-    // if there are any errors, exit of of func immediately
-    if (!(await User.canRecoveryBeInitiated(username))) {
-      return false;
-    }
-
+  static async createDbRecoveryEntry(username) {
     // grab phone number from database
     const phone = (await db.query(
       `SELECT phone FROM users WHERE username = $1`,
@@ -459,7 +456,22 @@ class User {
       hashedRecCode
     ]);
 
-    // send recoveryCode to SMS - running async is fine
+    return { phone, recCode };
+  }
+
+  /** @description sendRecoveryRequest - send SMS recovery request (Req Twilio)
+   * @param {string} username
+   * @return {Promise <boolean>}}
+   */
+  static async sendRecoveryRequest(username) {
+    // if there are any errors, exit of of func immediately
+    if (!(await User.canRecoveryBeInitiated(username))) {
+      return false;
+    }
+
+    const { phone, recCode } = await User.createDbRecoveryEntry(username);
+
+    // send recoveryCode to SMS - running async is fine (send via Twilio)
     sendSmsMessage(
       phone,
       `\nHack-or-Snooze Recovery Code: ${recCode}\n\nCode expires in 10 minutes.`
@@ -468,7 +480,7 @@ class User {
     return true;
   }
 
-  /** @description Helper for resetPassword - Verifies Recovery Info Exists for User
+  /** @description getRecoveryCodeInfo - Verifies Recovery Info Exists for User
    * @param {string} username
    * @return {Promise <{ username, code, createdat }>}}
    */
@@ -486,12 +498,13 @@ class User {
         'Recovery failed'
       );
     }
-    return result;
+    return result.rows[0];
   }
 
-  /** @description Helper for resetPassword - Verifies Recovery Time Expiration
+  /** @description checkRecoveryTimeValidity - Verifies Recovery Time Expiration
    * @param {string} username
    * @param {date} createdTime
+   * @return {Promise <boolean>}}
    */
   static async checkRecoveryTimeValidity(username, createdTime) {
     const currentTime = new Date();
@@ -507,11 +520,14 @@ class User {
         'Recovery failed'
       );
     }
+
+    return true;
   }
 
-  /** @description Helper for resetPassword - Verifies RecoveryCode
+  /** @description checkRecoveryCodeValidity - Verifies RecoveryCode
    * @param {string} inputCode
    * @param {string} recoveryHashedCode
+   * @return {Promise <boolean>}}
    */
   static async checkRecoveryCodeValidity(inputCode, recoveryHashedCode) {
     const isValid = await bcrypt.compare(inputCode, recoveryHashedCode);
@@ -522,6 +538,7 @@ class User {
         'Recovery failed'
       );
     }
+    return true;
   }
 
   /** @description resetPassword - reset user password with code (Req Twilio)
@@ -532,14 +549,14 @@ class User {
    */
   static async resetPassword(username, inputCode, newPassword) {
     // obtain recovery info, if does not exist, throw error
-    const result = await User.getRecoveryCodeInfo(username);
+    const recInfo = await User.getRecoveryCodeInfo(username);
 
     // check if recovery time has not expired, else throw error
-    const createdTime = result.rows[0].createdat;
+    const createdTime = recInfo.createdat;
     await User.checkRecoveryTimeValidity(username, createdTime);
 
     // check if inputCode is correct, else throw error
-    const recoveryHashedCode = result.rows[0].code;
+    const recoveryHashedCode = recInfo.code;
     await User.checkRecoveryCodeValidity(inputCode, recoveryHashedCode);
 
     // code is valid, update password and delete recovery info
