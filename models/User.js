@@ -13,7 +13,21 @@ const validateSkipLimit = require('../helpers/validateSkipLimit');
 const sqlForPartialUpdate = require('../helpers/partialUpdate');
 
 // import config
-const { BCRYPT_WORK_ROUNDS, USERS_LIST_LIMIT } = require('../config');
+const {
+  BCRYPT_WORK_ROUNDS,
+  USERS_LIST_LIMIT,
+  TWILIO_ENABLED
+} = require('../config');
+
+/* -------------------------------------------------------------------*/
+/* ---  Twilio Require - Enable only if twilio config is available ---*/
+/* -------------------------------------------------------------------*/
+let sendSmsMessage;
+if (TWILIO_ENABLED) {
+  sendSmsMessage = require('../helpers/sendSmsMessage');
+}
+/* -------------------------------------------------------------------*/
+/* -----------------------Twilio Block End----------------------------*/
 
 /** User on the site */
 
@@ -26,7 +40,7 @@ class User {
    * @return {Promise <{ user: username, name, createdAt, updatedAt, stories, favorites}>}
    * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
    */
-  static async addUser({ name, username, password }) {
+  static async addUser({ name, username, password, phone }) {
     // check if user exist in database, if so throw error
     const userExistsResult = await db.query(
       `SELECT * FROM users WHERE username = $1`,
@@ -44,8 +58,8 @@ class User {
     // create hashed password with bcrypt
     const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_ROUNDS);
     const result = await db.query(
-      `INSERT INTO users (username, name, password) VALUES ($1, $2, $3) RETURNING username, name, createdat, updatedat`,
-      [username, name, hashedPassword]
+      `INSERT INTO users (username, name, password, phone) VALUES ($1, $2, $3, $4) RETURNING username, name, createdat, updatedat`,
+      [username, name, hashedPassword, phone]
     );
 
     // single user row
@@ -64,6 +78,23 @@ class User {
       favorites,
       stories
     };
+  }
+
+  /** @description isUsernameValidFromToken - validate user exists from good token
+   * @param {string} username
+   * @return {boolean}}
+   */
+  static async isUsernameValidFromToken(username) {
+    const result = await db.query(`SELECT * FROM users WHERE username = $1`, [
+      username
+    ]);
+
+    // check if user exists, else throws unauthorized error
+    if (result.rows.length === 0) {
+      throw new APIError('Missing or invalid auth token.', 401, 'Unauthorized');
+    }
+
+    return true;
   }
 
   /** @description getUserDbInfo - gets a specific user's info from the db
@@ -337,19 +368,19 @@ class User {
     return user;
   }
 
-  // TODO
-  /** @description sendRecoveryRequest - send SMS recovery request
+  /** @description isRecoveryInfoValid - check user and phone info
    * @param {string} username
    * @return {boolean}}
    */
-  static async sendRecoveryRequest(username) {
+  static async isRecoveryInfoValid(username) {
     // check if user exists
-    const result = await db.query(`SELECT * FROM users WHERE username = $1`, [
-      username
-    ]);
+    const dbUserResult = await db.query(
+      `SELECT * FROM users WHERE username = $1`,
+      [username]
+    );
 
     // check if user does not exists, silent fail, log to server
-    if (result.rows.length === 0) {
+    if (dbUserResult.rows.length === 0) {
       console.log(
         'Fail Condition: SMS Recovery for Non-existing user was requested.'
       );
@@ -357,16 +388,52 @@ class User {
     }
 
     // extract user phone # and if does not exist, silent fail, log to server
-    const { targetNumber } = result.rows[0];
-    if (!targetNumber) {
+    const { phone } = dbUserResult.rows[0];
+    if (!phone) {
       console.log('Fail Condition: SMS Number does not exist for user.');
       return false;
     }
 
-    // if current sms code has not expired, remove old one and create new one
+    return true;
+  }
+
+  /** @description sendRecoveryRequest - send SMS recovery request (Req Twilio)
+   * @param {string} username
+   * @return {boolean}}
+   */
+  static async sendRecoveryRequest(username) {
+    if (!User.isRecoveryInfoValid(username)) {
+      return false;
+    }
+
+    // grab phone number from database
+    const phone = (await db.query(
+      `SELECT phone FROM users WHERE username = $1`,
+      [username]
+    )).rows[0].phone;
+
+    // delete old recovery entry if exists
+    await db.query('DELETE FROM recovery WHERE username = $1', [username]);
+
+    // 6 random digits joined as a text string, Ex: '158392'
+    const recCode = Array.from({ length: 6 }, () =>
+      Math.floor(Math.random() * 10)
+    ).join('');
+
     // generate new code, send to sms
-    //    if phone number exists, validate and then send
-    // come back and give json response
+    const hashedRecCode = await bcrypt.hash(recCode, BCRYPT_WORK_ROUNDS);
+
+    // place recovery code in db
+    await db.query('INSERT INTO recovery (username, code) VALUES ($1, $2)', [
+      username,
+      hashedRecCode
+    ]);
+
+    // send recoveryCode to SMS - running async is fine
+    sendSmsMessage(
+      phone,
+      `\nHack-or-Snooze Recovery Code: ${recCode}\n\nCode expires in 10 minutes.`
+    );
 
     return true;
   }

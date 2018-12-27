@@ -29,3 +29,10 @@ CREATE TABLE favorites
   storyId integer NOT NULL REFERENCES stories ON DELETE CASCADE,
   PRIMARY KEY(username, storyId)
 );
+
+CREATE TABLE recovery 
+(
+  username text PRIMARY KEY REFERENCES users ON DELETE CASCADE,
+  code text NOT NULL,
+  createdat timestamp DEFAULT current_timestamp NOT NULL
+);

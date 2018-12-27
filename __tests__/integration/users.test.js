@@ -250,13 +250,13 @@ describe('DELETE /users/:username', async () => {
       "User 'bob' successfully deleted."
     );
 
-    // confirm users is deleted
+    // confirm users is deleted, token is no longer good
     const response2 = await request(app)
       .get('/users/bob')
       .set({ Authorization: `Bearer ${bobToken}` });
     const { error } = response2.body;
-    expect(error.status).toBe(404);
-    expect(error).toHaveProperty('title', 'User Not Found');
+    expect(error.status).toBe(401);
+    expect(error).toHaveProperty('title', 'Unauthorized');
   });
 
   it('Failed to delete other user', async () => {

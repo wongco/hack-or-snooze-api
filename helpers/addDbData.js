@@ -13,6 +13,7 @@ async function setUp() {
 
 // drop all existing tables
 async function dropTables() {
+  await db.query('DROP TABLE IF EXISTS recovery');
   await db.query('DROP TABLE IF EXISTS favorites');
   await db.query('DROP TABLE IF EXISTS stories');
   await db.query('DROP TABLE IF EXISTS users');
@@ -46,6 +47,13 @@ async function createTables() {
     username text NOT NULL REFERENCES users ON DELETE CASCADE,
     storyId integer NOT NULL REFERENCES stories ON DELETE CASCADE,
     PRIMARY KEY(username, storyId)
+  )`);
+
+  await db.query(`CREATE TABLE recovery 
+  (
+    username text PRIMARY KEY REFERENCES users ON DELETE CASCADE,
+    code text NOT NULL,
+    createdat timestamp DEFAULT current_timestamp NOT NULL
   )`);
 }
 

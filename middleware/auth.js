@@ -39,8 +39,8 @@ async function ensureLoggedIn(req, res, next) {
     // verifies token and throws error if invalid
     const { username } = jwt.verify(token, SECRET_KEY, JWT_OPTIONS);
 
-    // check if user exists
-    await User.getUserDbInfo(username);
+    // check if user exists, else throw unauthorized error
+    await User.isUsernameValidFromToken(username);
 
     // then store username for conveneince
     req.username = username;
@@ -57,8 +57,8 @@ async function ensureCorrectUser(req, res, next) {
     // verifies token and throws error if invalid
     const { username } = jwt.verify(token, SECRET_KEY, JWT_OPTIONS);
 
-    // check if user exists
-    await User.getUserDbInfo(username);
+    // check if user exists, else throw unauthorized error
+    await User.isUsernameValidFromToken(username);
 
     if (username === req.params.username) {
       // then store username for conveneince
@@ -82,8 +82,8 @@ async function ensureCorrectAuthor(req, res, next) {
     // verifies token and throws error if invalid
     const { username } = jwt.verify(token, SECRET_KEY, JWT_OPTIONS);
 
-    // check if user exists
-    await User.getUserDbInfo(username);
+    // check if user exists, else throw unauthorized error
+    await User.isUsernameValidFromToken(username);
 
     // check if current logged in user is creator of story
     const { storyId } = req.params;

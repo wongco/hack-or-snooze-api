@@ -22,7 +22,8 @@
     "express": "4.16.4",
     "jsonschema": "1.2.4",
     "jsonwebtoken": "8.4.0",
-    "pg": "7.7.1"
+    "pg": "7.7.1",
+    "twilio": "3.26.0"
   },
   "engines": {
     "node": "10.14.1"

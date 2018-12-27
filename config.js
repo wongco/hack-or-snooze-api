@@ -19,6 +19,14 @@ const SECRET_KEY = process.env.SECRET_KEY || 'test-env-secret';
 const SERVER_PORT = process.env.PORT || 3000;
 const USERS_LIST_LIMIT = +process.env.USERS_LIST_LIMIT || 25;
 const STORIES_LIST_LIMIT = +process.env.STORIES_LIST_LIMIT || 25;
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_NUMBER = process.env.TWILIO_NUMBER;
+
+let TWILIO_ENABLED = false;
+if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_NUMBER) {
+  TWILIO_ENABLED = true;
+}
 
 module.exports = {
   SECRET_KEY,
@@ -27,5 +35,9 @@ module.exports = {
   SERVER_PORT,
   USERS_LIST_LIMIT,
   STORIES_LIST_LIMIT,
-  JWT_OPTIONS
+  JWT_OPTIONS,
+  TWILIO_ACCOUNT_SID,
+  TWILIO_AUTH_TOKEN,
+  TWILIO_NUMBER,
+  TWILIO_ENABLED
 };

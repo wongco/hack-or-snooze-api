@@ -16,6 +16,7 @@ const usersPatchSchema = require('../schemas/usersPatchSchema.json');
 const validHTTPMethods = require('../helpers/validHTTPMethods');
 const { ensureLoggedIn, ensureCorrectUser } = require('../middleware/auth');
 const { ensureValidStoryId } = require('../middleware/stories');
+const { TWILIO_ENABLED } = require('../config');
 
 // allow CORS on all routes in this router page
 router.use(cors());
@@ -195,46 +196,53 @@ router.delete(
   }
 );
 
-/* --------------------------------------
-Rereference Route: /users/username/recovery
-POST /users/username/recovery
-PATCH /users/username/recovery
--------------------------------------- */
+/* -------------------------------------------------------------------*/
+/* ---  Twilio Require - Enable only if twilio config is available ---*/
+/* -------------------------------------------------------------------*/
+if (TWILIO_ENABLED) {
+  /* --------------------------------------
+  Rereference Route: /users/username/recovery
+  POST /users/username/recovery
+  PATCH /users/username/recovery
+  -------------------------------------- */
 
-// restrict http methods on '/:username/recovery' route
-router.all('/:username/recovery', validHTTPMethods(['POST', 'PATCH']));
+  // restrict http methods on '/:username/recovery' route
+  router.all('/:username/recovery', validHTTPMethods(['POST', 'PATCH']));
 
-/** POST - /:username/recovery
- * desc: request SMS recovery code for specific username
- * input: { user: username }
- * output: { message: 'Request Acknowledged.' }
- */
-router.post('/:username/recovery', async (req, res, next) => {
-  try {
-    const { username } = req.params;
-    await User.sendRecoveryRequest(username);
-    return res.json({
-      message: `SMS recovery for user: '${username}' acknowledged.`
-    });
-  } catch (error) {
-    return next(error);
-  }
-});
+  /** POST - /:username/recovery
+   * desc: request SMS recovery code for specific username
+   * input: { user: username }
+   * output: { message: 'Request Acknowledged.' }
+   */
+  router.post('/:username/recovery', async (req, res, next) => {
+    try {
+      const { username } = req.params;
+      await User.sendRecoveryRequest(username);
+      return res.json({
+        message: `SMS recovery for user: '${username}' acknowledged.`
+      });
+    } catch (error) {
+      return next(error);
+    }
+  });
 
-/** PATCH - /:username/recovery
- * desc: resets password based on recovery code and updates new password
- * input: { user: code, password }
- * output: { message: 'Request Acknowledged.' }
- */
-router.patch('/:username/recovery', async (req, res, next) => {
-  try {
-    const { username } = req.params;
-    return res.json({
-      message: `Successfully updated password.`
-    });
-  } catch (error) {
-    return next(error);
-  }
-});
+  /** PATCH - /:username/recovery
+   * desc: resets password based on recovery code and updates new password
+   * input: { user: code, password }
+   * output: { message: 'Successfully updated password.' }
+   */
+  router.patch('/:username/recovery', async (req, res, next) => {
+    try {
+      const { username } = req.params;
+      return res.json({
+        message: `Successfully updated password.`
+      });
+    } catch (error) {
+      return next(error);
+    }
+  });
+}
+/* -------------------------------------------------------------------*/
+/* -----------------------Twilio Block End----------------------------*/
 
 module.exports = router;

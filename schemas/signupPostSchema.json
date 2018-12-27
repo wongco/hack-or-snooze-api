@@ -1,11 +1,12 @@
 {
   "definitions": {},
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "",
   "$id": "http://example.com/root.json",
   "type": "object",
   "title": "The Root Schema",
-  "required": ["user"],
+  "default": null,
   "additionalProperties": false,
+  "required": ["user"],
   "properties": {
     "user": {
       "$id": "#/properties/user",
@@ -20,7 +21,7 @@
           "type": "string",
           "title": "The Name Schema",
           "default": "",
-          "examples": ["Pirates Are Great!"],
+          "examples": ["ARRRrrrr2"],
           "minLength": 3,
           "pattern": "^(.*)$"
         },
@@ -29,7 +30,7 @@
           "type": "string",
           "title": "The Username Schema",
           "default": "",
-          "examples": ["pirate_master_01"],
+          "examples": ["yay3"],
           "minLength": 3,
           "pattern": "^(.*)$"
         },
@@ -38,8 +39,16 @@
           "type": "string",
           "title": "The Password Schema",
           "default": "",
-          "examples": ["alliseekistreasure"],
+          "examples": ["123456"],
           "minLength": 6,
+          "pattern": "^(.*)$"
+        },
+        "phone": {
+          "$id": "#/properties/user/properties/phone",
+          "type": "string",
+          "title": "The Phone Schema",
+          "default": "",
+          "examples": ["12341231234"],
           "pattern": "^(.*)$"
         }
       }
