@@ -1,14 +1,21 @@
+// npm modules
+const faker = require('faker');
+
 const db = require('../db');
 const User = require('../models/User');
-const Story = require('../models/Story');
+
+// fake data creation amount
+const USER_COUNT = 5;
+const TOTAL_STORIES = 25;
+const FAVORITES_PER_USER = 3;
 
 // control function to clean up db and add new data
 async function setUp() {
   await dropTables();
   await createTables();
-  await usersSetup();
-  await storiesSetup();
-  await favoritesSetup();
+  const users = await usersSetup();
+  await storiesSetup(users);
+  await favoritesSetup(users);
 }
 
 // drop all existing tables
@@ -59,62 +66,78 @@ async function createTables() {
 
 // setup users on DB
 async function usersSetup() {
-  await User.addUser({
-    username: 'bob',
-    name: 'Bobby',
-    password: '123456'
-  });
+  for (let i = 0; i < USER_COUNT; i++) {
+    const name = faker.name.firstName();
+    const username = faker.internet.userName();
+    const password = faker.internet.password(10);
 
-  await User.addUser({
-    username: 'jim',
-    name: 'Jimmy',
-    password: '123456'
-  });
+    // faker fails to generate actual USA valid phone numbers
+    //const phone = faker.phone.phoneFormats();
 
-  await User.addUser({
-    username: 'karkar',
-    name: 'Karen',
-    password: '123456'
-  });
+    // use this to bcrypt passwords instead of raw sql insert
+    await User.addUser({
+      username,
+      name,
+      password
+    });
+  }
+
+  // get user details with ids
+  const users = await User.getUsers({});
+  return users;
 }
 
 // setup stories on DB
-async function storiesSetup() {
-  await Story.addStory({
-    title: 'How to eat cookies.',
-    url: 'http://www.goodcookies.com',
-    author: 'Bobby',
-    username: 'bob'
-  });
+async function storiesSetup(users) {
+  const insertStatement =
+    'INSERT INTO stories (username, author, title, url) VALUES ';
 
-  await Story.addStory({
-    title: 'Badminton? What is that?',
-    url: 'http://www.goodsports.com',
-    author: 'Jimmy',
-    username: 'jim'
-  });
+  let count = 0;
+  const usersValues = [];
+  const usersStatement = [];
 
-  await Story.addStory({
-    title: 'Why Do i try?',
-    url: 'http://www.inspiration.com',
-    author: 'Karen',
-    username: 'karkar'
-  });
+  // iterate over how many stories we want per user
+  for (let i = 0; i < TOTAL_STORIES; i++) {
+    usersValues.push(faker.company.bs()); //title
+    usersValues.push(faker.internet.url()); //url
+    const randomUser = users[Math.floor(Math.random() * users.length)];
+    usersStatement.push(
+      `('${randomUser.username}', '${
+        randomUser.name
+      }', $${++count}, $${++count})`
+    );
+  }
 
-  await Story.addStory({
-    title: 'Where did the dogs go?',
-    url: 'http://www.urbancuriosity.com',
-    author: 'Bobby',
-    username: 'bob'
-  });
+  // make jumbo sql statement
+  const query = insertStatement + usersStatement.join(', ');
+  // make jumbo insert
+  await db.query(query, usersValues);
 }
 
 // setup favorites on DB
-async function favoritesSetup() {
-  await User.addFavorite('bob', 2);
-  await User.addFavorite('jim', 1);
-  await User.addFavorite('bob', 3);
-  await User.addFavorite('karkar', 4);
+async function favoritesSetup(users) {
+  const storiesIds = (await db.query('SELECT storyid FROM stories')).rows;
+
+  const insertStatement = 'INSERT INTO favorites (username, storyid) VALUES ';
+  let count = 0;
+  const favsValues = [];
+  const favsStatement = [];
+
+  const choices = storiesIds.map(storyObj => storyObj.storyid);
+
+  users.forEach(user => {
+    for (let i = 0; i < FAVORITES_PER_USER; i++) {
+      const randomIdx = Math.floor(Math.random() * choices.length);
+      const storyid = choices.splice(randomIdx, 1)[0];
+      favsValues.push(storyid);
+      favsStatement.push(`('${user.username}', $${++count})`);
+    }
+  });
+
+  // make jumbo sql statement
+  const query = insertStatement + favsStatement.join(', ');
+  // make jumbo insert
+  await db.query(query, favsValues);
 }
 
 setUp()
@@ -124,5 +147,6 @@ setUp()
   })
   .catch(error => {
     console.log('There was an error.');
+    console.log(error.message);
     process.exit(1);
   });

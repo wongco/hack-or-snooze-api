@@ -5,7 +5,7 @@ require('dotenv').config();
 
 // pull db uri from .env or actual ENV
 let DB_URI = process.env.DATABASE_URL || 'postgresql:///hack-or-snooze';
-let BCRYPT_WORK_ROUNDS = +process.env.BCRYPT_WORK_ROUNDS || 12;
+let BCRYPT_WORK_ROUNDS = +process.env.BCRYPT_WORK_ROUNDS || 1;
 // json web token expiration time
 let JWT_OPTIONS = { expiresIn: 60 * 60 * 24 * 7 };
 

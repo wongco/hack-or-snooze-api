@@ -124,6 +124,7 @@ Testing stack:
 - jest - Testing Library
 - supertest - Testing Library (mock http requests)
 - morgan - HTTP Request Logger
+- faker - Generate Random Content
 
 ## Author
 
