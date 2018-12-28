@@ -24,7 +24,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // enable header protection using helmet
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"]
+      }
+    },
+    referrerPolicy: { policy: 'no-referrer' }
+  })
+);
 
 // routing control
 app.use('/', authRoutes);
