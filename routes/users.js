@@ -5,6 +5,7 @@ const cors = require('cors');
 
 // class models
 const User = require('../models/User');
+const APIError = require('../models/ApiError');
 
 // import helper
 const validateJSONSchema = require('../helpers/validateJSONSchema');
@@ -40,6 +41,7 @@ router.all('/', validHTTPMethods(['GET']));
  */
 router.get('/', ensureLoggedIn, async (req, res, next) => {
   try {
+    // get users public info only
     const users = await User.getUsers(req.query);
     return res.json({ users });
   } catch (error) {
@@ -99,7 +101,9 @@ router.patch('/:username', ensureCorrectUser, async (req, res, next) => {
 
   try {
     const { username } = req.params;
-    const user = await User.patchUser(username, req.body.user);
+    const user = await User.getUser(username);
+    await user.patchUser(req.body.user);
+
     return res.json({ user });
   } catch (error) {
     return next(error);
@@ -121,7 +125,12 @@ router.patch('/:username', ensureCorrectUser, async (req, res, next) => {
 router.delete('/:username', ensureCorrectUser, async (req, res, next) => {
   try {
     const { username } = req.params;
-    const user = await User.deleteUser(username);
+
+    const user = await User.getUser(username);
+
+    // delete user in db
+    await user.deleteUser();
+
     return res.json({
       message: `User '${username}' successfully deleted.`,
       user
@@ -162,7 +171,10 @@ router.post(
   async (req, res, next) => {
     try {
       const { username, storyId } = req.params;
-      const user = await User.addFavorite(username, storyId);
+
+      const user = await User.getUser(username);
+      await user.addFavorite(storyId);
+
       return res.json({ message: 'Favorite Added!', user });
     } catch (error) {
       return next(error);
@@ -189,7 +201,10 @@ router.delete(
   async (req, res, next) => {
     try {
       const { username, storyId } = req.params;
-      const user = await User.deleteFavorite(username, storyId);
+
+      const user = await User.getUser(username);
+      await user.deleteFavorite(storyId);
+
       return res.json({ message: 'Favorite Removed!', user });
     } catch (error) {
       return next(error);
@@ -218,7 +233,8 @@ if (TWILIO_ENABLED) {
   router.post('/:username/recovery', async (req, res, next) => {
     const { username } = req.params;
     try {
-      await User.sendRecoveryRequest(username);
+      const user = await User.getUser(username);
+      await user.sendRecoveryRequest(username);
       return res.json({
         message: `SMS recovery for user: '${username}' acknowledged.`
       });
@@ -247,11 +263,19 @@ if (TWILIO_ENABLED) {
     try {
       const { username } = req.params;
       const { code, password } = req.body.user;
-      await User.resetPassword(username, code, password);
+
+      const user = await User.getUser(username);
+
+      await user.resetPassword(code, password);
       return res.json({
-        message: `Successfully updated password.`
+        message: 'Successfully updated password.'
       });
-    } catch (error) {
+    } catch (err) {
+      const error = new APIError(
+        'Recovery information is invalid.',
+        400,
+        'Recovery failed'
+      );
       return next(error);
     }
   });

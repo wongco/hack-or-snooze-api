@@ -62,7 +62,8 @@ beforeEach(async () => {
   const stories = await Story.getStories({});
   const storyId = stories[0].storyId;
 
-  await User.addFavorite('jas', storyId);
+  const userJas = await User.getUser('jas');
+  await userJas.addFavorite(storyId);
 });
 
 describe('addUser method', async () => {
@@ -104,24 +105,6 @@ describe('addUser method', async () => {
   });
 });
 
-describe('formatPhoneNumber method', () => {
-  it('formatting a regular number USA # succeeded', () => {
-    const phone = User.formatPhoneNumber('415-123-1234');
-    expect(phone).toBe('+14151231234');
-  });
-
-  it('failed to format number due to wrong digits/format/non-usa', () => {
-    try {
-      User.formatPhoneNumber('11-415-1263-12634');
-    } catch (error) {
-      expect(error).toHaveProperty(
-        'message',
-        'Please input a valid USA phone number.'
-      );
-    }
-  });
-});
-
 describe('getUserDbInfo method', async () => {
   it('gets a users info from database successfully', async () => {
     const user = await User.getUserDbInfo('bob');
@@ -149,22 +132,6 @@ describe('getUser method', async () => {
   it('failed due to non-existing username', async () => {
     try {
       await User.getUser('jim');
-    } catch (error) {
-      expect(error).toHaveProperty('title', 'User Not Found');
-    }
-  });
-});
-
-describe('getUserOwnStories method', async () => {
-  it('getting a users own stories succeeded', async () => {
-    const stories = await User.getUserOwnStories('bob');
-    expect(stories).toHaveLength(1);
-    expect(stories[0]).toHaveProperty('username', 'bob');
-  });
-
-  it('getting stories for non exisiting user returns no results', async () => {
-    try {
-      await User.getUserOwnStories('jimmy');
     } catch (error) {
       expect(error).toHaveProperty('title', 'User Not Found');
     }
@@ -223,7 +190,8 @@ describe('getUsers method', async () => {
 
 describe('patchUser method', async () => {
   it('successfully updates user information', async () => {
-    const user = await User.patchUser('bob', {
+    const user = await User.getUser('bob');
+    await user.patchUser({
       name: 'bobby',
       password: 'abcdef'
     });
@@ -234,7 +202,8 @@ describe('patchUser method', async () => {
   });
 
   it('successfully update partial user information', async () => {
-    const user = await User.patchUser('bob', {
+    const user = await User.getUser('bob');
+    await user.patchUser({
       name: 'bobby'
     });
 
@@ -242,22 +211,12 @@ describe('patchUser method', async () => {
     expect(user).toHaveProperty('name', 'bobby');
     expect(user).not.toHaveProperty('password');
   });
-
-  it('fail to update details for non-existent user', async () => {
-    try {
-      await User.patchUser('jeremy', {
-        name: 'bobby',
-        password: 'abcdef'
-      });
-    } catch (error) {
-      expect(error).toHaveProperty('title', 'User Not Found');
-    }
-  });
 });
 
 describe('deleteUser method', async () => {
   it('successfully deleted user', async () => {
-    const user = await User.deleteUser('bob');
+    const user = await User.getUser('bob');
+    user.deleteUser();
 
     expect(user).toHaveProperty('username', 'bob');
     expect(user).toHaveProperty('name', 'Bobby');
@@ -268,13 +227,14 @@ describe('deleteUser method', async () => {
       expect(error).toHaveProperty('title', 'User Not Found');
     }
   });
+});
 
-  it('failed to delete non-existent user', async () => {
-    try {
-      await User.deleteUser('jack');
-    } catch (error) {
-      expect(error).toHaveProperty('title', 'User Not Found');
-    }
+describe('getUserOwnStories method', async () => {
+  it('getting a users own stories succeeded', async () => {
+    const user = await User.getUser('bob');
+    const stories = await user.getUserOwnStories();
+    expect(stories).toHaveLength(1);
+    expect(stories[0]).toHaveProperty('username', 'bob');
   });
 });
 
@@ -285,18 +245,10 @@ describe('getUserFavorites method', async () => {
     const storyId = stories[0].storyId;
 
     // add storyID to favorites
-    await User.addFavorite('bob', storyId);
+    const user = await User.getUser('bob');
+    await user.addFavorite(storyId);
 
-    const userFavorites = await User.getUserFavorites('bob');
-    expect(userFavorites).toHaveLength(1);
-  });
-
-  it('no results for non-existent user', async () => {
-    try {
-      await User.getUserFavorites('kevino');
-    } catch (error) {
-      expect(error).toHaveProperty('title', 'User Not Found');
-    }
+    expect(user.favorites).toHaveLength(1);
   });
 });
 
@@ -305,7 +257,8 @@ describe('addFavorite method', async () => {
     const stories = await Story.getStories({});
     const storyId = stories[0].storyId;
 
-    const user = await User.addFavorite('bob', storyId);
+    const user = await User.getUser('bob');
+    await user.addFavorite(storyId);
 
     expect(user).toHaveProperty('favorites');
     expect(user.favorites).toHaveLength(1);
@@ -313,22 +266,13 @@ describe('addFavorite method', async () => {
 
   it('failed to add story with invalid storyId', async () => {
     try {
-      await User.addFavorite('bob', 10000);
+      const user = await User.getUser('bob');
+      await user.addFavorite(10000);
     } catch (error) {
       expect(error).toHaveProperty(
         'message',
         "No story with ID '10000' found."
       );
-    }
-  });
-
-  it('failed to add story with invalid userId', async () => {
-    try {
-      const stories = await Story.getStories({});
-      const storyId = stories[0].storyId;
-      await User.addFavorite('jeremiah', storyId);
-    } catch (error) {
-      expect(error).toHaveProperty('title', 'User Not Found');
     }
   });
 });
@@ -338,7 +282,8 @@ describe('deleteFavorite method', async () => {
     const stories = await Story.getStories({});
     const storyId = stories[0].storyId;
 
-    const user = await User.deleteFavorite('jas', storyId);
+    const user = await User.getUser('jas');
+    await user.deleteFavorite(storyId);
 
     expect(user).toHaveProperty('favorites');
     expect(user.favorites).toHaveLength(0);
@@ -346,22 +291,13 @@ describe('deleteFavorite method', async () => {
 
   it('failed to delete story with invalid storyId', async () => {
     try {
-      await User.deleteFavorite('jas', 10000);
+      const user = await User.getUser('jas');
+      await user.deleteFavorite(10000);
     } catch (error) {
       expect(error).toHaveProperty(
         'message',
         "No story with ID '10000' found."
       );
-    }
-  });
-
-  it('failed to delete story with invalid userId', async () => {
-    try {
-      const stories = await Story.getStories({});
-      const storyId = stories[0].storyId;
-      await User.deleteFavorite('jeremiah', storyId);
-    } catch (error) {
-      expect(error).toHaveProperty('message', "No user 'jeremiah' found.");
     }
   });
 });
@@ -374,41 +310,34 @@ describe('canRecoveryBeInitiated method', async () => {
       'bob',
       hashedRecCode
     ]);
+    const user = await User.getUser('bob');
 
-    expect(await User.canRecoveryBeInitiated('bob')).toBe(true);
+    expect(await user.canRecoveryBeInitiated()).toBe(true);
   });
 
   it('failed to no phone number existing for user', async () => {
-    expect(await User.canRecoveryBeInitiated('jas')).toBe(false);
-  });
-
-  it('failed to no user not existing', async () => {
-    expect(await User.canRecoveryBeInitiated('jeromess')).toBe(false);
+    const user = await User.getUser('jas');
+    expect(await user.canRecoveryBeInitiated()).toBe(false);
   });
 });
 
 describe('createDbRecoveryEntry method', async () => {
   it('obtain phone number and recovery code successfully', async () => {
-    const recoveryInfo = await User.createDbRecoveryEntry('bob');
+    const user = await User.getUser('bob');
+    const recoveryInfo = await user.createDbRecoveryEntry();
     const { phone, recCode } = recoveryInfo;
 
     expect(phone).toBe('+14151231234');
     expect(recCode).toHaveLength(6);
   });
 
-  it('fail to create db record for invalid user', async () => {
-    try {
-      await User.createDbRecoveryEntry('jerommmeeee');
-    } catch (error) {
-      expect(error).toHaveProperty('message');
-    }
-  });
-
   it('successive recovery attempts creates different codes', async () => {
-    const recoveryInfo = await User.createDbRecoveryEntry('bob');
+    const user = await User.getUser('bob');
+
+    const recoveryInfo = await user.createDbRecoveryEntry();
     const recCode = recoveryInfo.recCode;
 
-    const recoveryInfo2 = await User.createDbRecoveryEntry('bob');
+    const recoveryInfo2 = await user.createDbRecoveryEntry();
     const recCode2 = recoveryInfo2.recCode;
 
     expect(recCode).not.toBe(recCode2);
@@ -417,26 +346,19 @@ describe('createDbRecoveryEntry method', async () => {
 
 describe('getRecoveryCodeInfo method', async () => {
   it('gets recovery info successfully', async () => {
-    await User.createDbRecoveryEntry('bob');
-    const result = await User.getRecoveryCodeInfo('bob');
+    const user = await User.getUser('bob');
+    await user.createDbRecoveryEntry();
+    const result = await user.getRecoveryCodeInfo();
     expect(result).toHaveProperty('username', 'bob');
     expect(result).toHaveProperty('code');
-  });
-
-  it('fail to get recovery info due to user not existing', async () => {
-    try {
-      await User.getRecoveryCodeInfo('jeremyyyyyy');
-    } catch (error) {
-      expect(error).toHaveProperty('title', 'Recovery failed');
-    }
   });
 });
 
 describe('checkRecoveryTimeValidity method', async () => {
   it('time is within recovery window', async () => {
+    const user = await User.getUser('bob');
     const timeFiveMinutesAgo = new Date() - 1000 * 60 * 5;
-    const isTimeValid = await User.checkRecoveryTimeValidity(
-      'bob',
+    const isTimeValid = await user.checkRecoveryTimeValidity(
       timeFiveMinutesAgo
     );
 
@@ -445,11 +367,12 @@ describe('checkRecoveryTimeValidity method', async () => {
 
   it('failed due to time windows not being valid (time > 10 min default)', async () => {
     // create recovery entry
-    await User.createDbRecoveryEntry('bob');
+    const user = await User.getUser('bob');
+    await user.createDbRecoveryEntry();
 
     const timeTwelveMinutesAgo = new Date() - 1000 * 60 * 12;
     try {
-      await User.checkRecoveryTimeValidity('bob', timeTwelveMinutesAgo);
+      await user.checkRecoveryTimeValidity(timeTwelveMinutesAgo);
     } catch (error) {
       expect(error).toHaveProperty('title', 'Recovery failed');
       const result = await db.query(
@@ -462,48 +385,15 @@ describe('checkRecoveryTimeValidity method', async () => {
   });
 });
 
-describe('checkRecoveryCodeValidity method', async () => {
-  it('code was successfully validated', async () => {
-    // create entry and get recCode
-    const result = await User.createDbRecoveryEntry('bob');
-    const { recCode } = result;
-
-    // pull from db and get recCodeHash
-    const recInfo = await User.getRecoveryCodeInfo('bob');
-    const recoveryHashedCode = recInfo.code;
-
-    const isValid = await User.checkRecoveryCodeValidity(
-      recCode,
-      recoveryHashedCode
-    );
-
-    expect(isValid).toBe(true);
-  });
-
-  it('failed due to recoveryCode being incorrect', async () => {
-    // create entry and get recCode
-    await User.createDbRecoveryEntry('bob');
-
-    // pull from db and get recCodeHash
-    const recInfo = await User.getRecoveryCodeInfo('bob');
-    const recoveryHashedCode = recInfo.code;
-
-    try {
-      await User.checkRecoveryCodeValidity('000000', recoveryHashedCode);
-    } catch (error) {
-      expect(error).toHaveProperty('title', 'Recovery failed');
-    }
-  });
-});
-
 describe('resetPassword method', async () => {
   it('password was reset successfully', async () => {
     // create entry and get recCode
-    const result = await User.createDbRecoveryEntry('bob');
+    const user = await User.getUser('bob');
+    const result = await user.createDbRecoveryEntry();
     const { recCode } = result;
 
     // completed successfully
-    const completed = await User.resetPassword('bob', recCode, 'fedcba');
+    const completed = await user.resetPassword(recCode, 'fedcba');
     expect(completed).toBe(true);
 
     // make sure recovery record was deleted
@@ -518,19 +408,12 @@ describe('resetPassword method', async () => {
     expect(isValid).toBe(true);
   });
 
-  it('failed to reset password due to non existing user', async () => {
-    try {
-      await User.resetPassword('jerrrreeeeemy', '000000', 'fedcba');
-    } catch (error) {
-      expect(error).toHaveProperty('title', 'Recovery failed');
-    }
-  });
-
   it('failed to reset password due to bad recovery Code', async () => {
     // create entry and get recCode
-    await User.createDbRecoveryEntry('bob');
+    const user = await User.getUser('bob');
+    await user.createDbRecoveryEntry();
     try {
-      await User.resetPassword('bob', '000000', 'fedcba');
+      await user.resetPassword('000000', 'fedcba');
     } catch (error) {
       expect(error).toHaveProperty('title', 'Recovery failed');
     }

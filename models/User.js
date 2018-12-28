@@ -3,7 +3,6 @@
 // npm modules
 const db = require('../db');
 const bcrypt = require('bcrypt');
-const normalizePhoneNum = require('phone');
 
 // class models
 const APIError = require('./ApiError');
@@ -12,6 +11,8 @@ const Story = require('./Story');
 // helper function
 const validateSkipLimit = require('../helpers/validateSkipLimit');
 const sqlForPartialUpdate = require('../helpers/partialUpdate');
+const formatPhoneNumber = require('../helpers/formatPhoneNumber');
+const checkRecoveryCodeValidity = require('../helpers/checkRecoveryCodeValidity');
 
 // import config
 const {
@@ -34,12 +35,28 @@ if (TWILIO_ENABLED) {
 /** User on the site */
 
 class User {
+  constructor({
+    name,
+    username,
+    createdAt,
+    updatedAt,
+    favorites = [],
+    stories = []
+  }) {
+    this.username = username;
+    this.name = name;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
+    this.favorites = favorites;
+    this.stories = stories;
+  }
+
   /** @description addUser - adds a user to the database
    * @property {object} user
    * @property {string} user.username
    * @property {string} user.name
    * @property {string} user.password
-   * @return {Promise <{ user: username, name, createdAt, updatedAt, stories, favorites}>}
+   * @return {Promise <User ({ user: username, name, createdAt, updatedAt, stories, favorites})>}
    * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
    */
   static async addUser({ name, username, password, phone }) {
@@ -59,7 +76,7 @@ class User {
 
     // if phone number was passed, validate, convert to E.164
     if (phone) {
-      phone = User.formatPhoneNumber(phone);
+      phone = formatPhoneNumber(phone);
     }
 
     // create hashed password with bcrypt
@@ -74,35 +91,12 @@ class User {
 
     // deconstruct data for formatting
     const { createdat, updatedat, ...userDetails } = user;
-    const favorites = [];
-    const stories = [];
 
-    // return formatted JS object
-    return {
+    return new User({
       ...userDetails,
       createdAt: createdat,
-      updatedAt: updatedat,
-      favorites,
-      stories
-    };
-  }
-
-  /** @description formatPhoneNumber - formats phone into E.164 format
-   * @param {string} phone
-   * @return {string} phone - Ex: +14151231234
-   */
-  static formatPhoneNumber(phone) {
-    // retrieve valid USA phone numbers only
-    const result = normalizePhoneNum(phone, 'USA');
-    // could not recognize USA phone number
-    if (result.length === 0) {
-      throw new APIError(
-        'Please input a valid USA phone number.',
-        400,
-        'Invalid Input'
-      );
-    }
-    return result[0];
+      updatedAt: updatedat
+    });
   }
 
   /** @description isUsernameValidFromToken - validate user exists from good token
@@ -142,55 +136,27 @@ class User {
 
   /** @description getUser - gets a specific user's info formatted nicely for JSON resp.
    * @param {string} username
-   * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
+   * @return {Promise <User({ username, name, createdAt, updatedAt, stories, favorites})>}
    * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
    */
   static async getUser(username) {
     // check if user exists
-    const user = await User.getUserDbInfo(username);
+    const userDb = await User.getUserDbInfo(username);
 
     // deconstruct data for camelCase formatting
-    const { createdat, updatedat, ...userDetails } = user;
+    const { createdat, updatedat, ...userDetails } = userDb;
 
-    // get actual favorites and stories
-    const favorites = await User.getUserFavorites(username);
-    const stories = await User.getUserOwnStories(username);
-
-    return {
+    const user = new User({
       ...userDetails,
       createdAt: createdat,
-      updatedAt: updatedat,
-      favorites,
-      stories
-    };
-  }
-
-  /** @description getUserOwnStories - gets stories created by a specific user
-   * @param {string} username
-   * @return { Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
-   */
-  static async getUserOwnStories(username) {
-    // check if user exists, else throw error
-    await User.getUserDbInfo(username);
-
-    const dbStories = await db.query(
-      'SELECT * FROM stories where username = $1',
-      [username]
-    );
-
-    // map & deconstruct data for camelCase formatting
-    const stories = dbStories.rows.map(dbStory => {
-      const { createdat, updatedat, storyid, ...userDetails } = dbStory;
-
-      return {
-        ...userDetails,
-        storyId: storyid,
-        createdAt: createdat,
-        updatedAt: updatedat
-      };
+      updatedAt: updatedat
     });
 
-    return stories;
+    // get actual favorites and stories
+    user.favorites = await user.getUserFavorites();
+    user.stories = await user.getUserOwnStories();
+
+    return user;
   }
 
   /** @description checkValidCreds - checks if a user's credentials are valid
@@ -233,8 +199,8 @@ class User {
     );
 
     // rename columns to match formatted output
-    const users = result.rows.map(userDbDetail => {
-      const { createdat, updatedat, ...userDetails } = userDbDetail;
+    const users = result.rows.map(userPublicDetail => {
+      const { createdat, updatedat, ...userDetails } = userPublicDetail;
       return {
         ...userDetails,
         createdAt: createdat,
@@ -245,86 +211,97 @@ class User {
     return users;
   }
 
-  /** @description patchUser - updates specific user in database
-   * @param {string} username
-   * @property {object} userUpdateDetails (at least one property below)
-   * @property {string} userUpdateDetails.name
-   * @property {string} userUpdateDetails.password
-   * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
-   * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
+  /** @description patchUser - updates user instance in database
+   * @property {object} rawUpdate (at least one property below)
+   * @property {string} rawUpdate.name
+   * @property {string} rawUpdate.password
+   * @property {string} rawUpdate.phone
    */
-  static async patchUser(username, userUpdateDetails) {
-    // check if user exists, else throw error
-    await User.getUserDbInfo(username);
-
-    // add timestamp to be updated
-    userUpdateDetails.updatedat = new Date();
+  async patchUser(rawUpdate) {
+    if (rawUpdate.name) {
+      this.name = rawUpdate.name;
+    }
 
     // if phone number was passed, validate, convert to E.164
-    if (userUpdateDetails.phone) {
-      userUpdateDetails.phone = User.formatPhoneNumber(userUpdateDetails.phone);
+    if (rawUpdate.phone) {
+      this.phone = formatPhoneNumber(rawUpdate.phone);
     }
 
-    // if password change is requested, hash password
-    if (userUpdateDetails.password) {
-      userUpdateDetails.password = await bcrypt.hash(
-        userUpdateDetails.password,
+    let cleanUpdate = {
+      name: this.name,
+      phone: this.phone,
+      updatedat: new Date()
+    };
+
+    // if password change is req, hash and add to cleanUpdate
+    if (rawUpdate.password) {
+      const hashPassword = await bcrypt.hash(
+        rawUpdate.password,
         BCRYPT_WORK_ROUNDS
       );
+      cleanUpdate.password = hashPassword;
     }
 
-    // generate sql commands for update
+    // generate sql commands for update with data from cleanUpdate
     const { query, values } = sqlForPartialUpdate(
       'users',
-      userUpdateDetails,
+      cleanUpdate,
       'username',
-      username
+      this.username
     );
 
     // update database
     await db.query(query, values);
-
-    // get updated userDetails
-    const user = await User.getUser(username);
-    return user;
   }
 
-  /** @description deleteUser - deletes specific user in database
-   * @param {string} username
-   * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
-   * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
-   */
-  static async deleteUser(username) {
-    // check if user exists, else throw error
-    await User.getUserDbInfo(username);
+  /** @description deleteUser - deletes user instance in database */
+  async deleteUser() {
+    await db.query('DELETE FROM users WHERE username = $1', [this.username]);
+  }
 
-    // grab user details before deleting
-    const user = await User.getUser(username);
-    await db.query('DELETE FROM users WHERE username = $1', [username]);
-    return user;
+  /** @description getUserOwnStories - gets stories created by a specific user
+   * @param {string} username
+   * @return { Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
+   */
+  async getUserOwnStories() {
+    const dbStories = await db.query(
+      'SELECT * FROM stories where username = $1',
+      [this.username]
+    );
+
+    // map & deconstruct data for camelCase formatting
+    const stories = dbStories.rows.map(dbStory => {
+      const { createdat, updatedat, storyid, ...userDetails } = dbStory;
+      // TODO, convert to instances of Story
+      return {
+        ...userDetails,
+        storyId: storyid,
+        createdAt: createdat,
+        updatedAt: updatedat
+      };
+    });
+
+    return stories;
   }
 
   /** @description getUserFavorites - get user's favorites stories
-   * @param {string} username
    * @return {Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
    */
-  static async getUserFavorites(username) {
-    // check if user exists, else throw error
-    await User.getUserDbInfo(username);
-
+  async getUserFavorites() {
     const dbStories = await db.query(
       `SELECT s.storyid, s.title, s.url, s.author, s.username, s.createdat, s.updatedat
        FROM favorites as f
        JOIN stories as s
        ON f.storyid = s.storyid
        WHERE f.username = $1`,
-      [username]
+      [this.username]
     );
 
     // map & deconstruct data for camelCase formatting
     const stories = dbStories.rows.map(dbStory => {
       const { createdat, updatedat, storyid, ...userDetails } = dbStory;
 
+      // TODO make in story Instances
       return {
         ...userDetails,
         storyId: storyid,
@@ -337,85 +314,60 @@ class User {
   }
 
   /** @description addFavorite - add storyId to user's favorite stories
-   * @param {string} username
-   * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
-   * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
+   * @param {string} storyId
    */
-  static async addFavorite(username, storyId) {
-    // check if user exists, else throw error
-    await User.getUserDbInfo(username);
-
+  async addFavorite(storyId) {
     // check if story exists
-    await Story.getStoryDbInfo(storyId);
+    const story = await Story.getStory(storyId);
 
     // check if storyId is already in user favs
-    const result = await db.query(
-      'SELECT * FROM favorites WHERE username = $1 AND storyid = $2',
-      [username, storyId]
+    const storyExistsIdx = this.favorites.findIndex(
+      story => story.storyId === storyId
     );
 
     // if does not exist in favorites, add to favorties
-    if (result.rows.length === 0) {
+    if (storyExistsIdx === -1) {
       // store username/storyId pair in favorites
       await db.query('INSERT INTO favorites VALUES ($1, $2)', [
-        username,
+        this.username,
         storyId
       ]);
+      // update user instance favorites
+      this.favorites.push(story);
     }
-
-    const user = await User.getUser(username);
-    return user;
   }
 
   /** @description deleteFavorite - delete storyId from user's favorite stories
-   * @param {string} username
-   * @return {Promise <{ username, name, createdAt, updatedAt, stories, favorites}>}
-   * both stories and favorites = [ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]
+   * @param {string} storyId
    */
-  static async deleteFavorite(username, storyId) {
-    // check if user exists, else throw error
-    await User.getUserDbInfo(username);
-
+  async deleteFavorite(storyId) {
     // check if story exists
     await Story.getStoryDbInfo(storyId);
 
     // check if storyId is already in user favs
-    const result = await db.query(
-      'SELECT * FROM favorites WHERE username = $1 AND storyid = $2',
-      [username, storyId]
+    const storyExistsIdx = this.favorites.findIndex(
+      story => story.storyId === storyId
     );
 
     // if exists in favorties, delete from favorties
-    if (result.rows.length === 1) {
+    if (storyExistsIdx >= 0) {
       // delete username/storyId pair from favorites
       await db.query(
         'DELETE FROM favorites WHERE username = $1 AND storyID = $2',
-        [username, storyId]
+        [this.username, storyId]
       );
+      this.favorites.splice(storyExistsIdx, 1);
     }
-
-    const user = await User.getUser(username);
-    return user;
   }
 
   /** @description isRecoveryInfoValid - check user and phone info
-   * @param {string} username
    * @return {Promise <boolean>}}
    */
-  static async canRecoveryBeInitiated(username) {
-    // check if user exists
+  async canRecoveryBeInitiated() {
     const dbUserResult = await db.query(
-      `SELECT * FROM users WHERE username = $1`,
-      [username]
+      `SELECT phone FROM users WHERE username = $1`,
+      [this.username]
     );
-
-    // check if user does not exists, silent fail, log to server
-    if (dbUserResult.rows.length === 0) {
-      console.log(
-        'Fail Condition (Log to Server): SMS Recovery for Non-existing user was requested.'
-      );
-      return false;
-    }
 
     // extract user phone # and if does not exist, silent fail, log to server
     const { phone } = dbUserResult.rows[0];
@@ -429,18 +381,17 @@ class User {
   }
 
   /** @description createDbRecoveryEntry - create recovery info for user
-   * @param {string} username
    * @return {Promise <{ phone, recCode }>}}
    */
-  static async createDbRecoveryEntry(username) {
+  async createDbRecoveryEntry() {
     // grab phone number from database
     const phone = (await db.query(
       `SELECT phone FROM users WHERE username = $1`,
-      [username]
+      [this.username]
     )).rows[0].phone;
 
     // delete old recovery entry if exists
-    await db.query('DELETE FROM recovery WHERE username = $1', [username]);
+    await db.query('DELETE FROM recovery WHERE username = $1', [this.username]);
 
     // 6 random digits joined as a text string, Ex: '158392'
     const recCode = Array.from({ length: 6 }, () =>
@@ -452,7 +403,7 @@ class User {
 
     // place recovery code in db
     await db.query('INSERT INTO recovery (username, code) VALUES ($1, $2)', [
-      username,
+      this.username,
       hashedRecCode
     ]);
 
@@ -460,16 +411,15 @@ class User {
   }
 
   /** @description sendRecoveryRequest - send SMS recovery request (Req Twilio)
-   * @param {string} username
    * @return {Promise <boolean>}}
    */
-  static async sendRecoveryRequest(username) {
+  async sendRecoveryRequest() {
     // if there are any errors, exit of of func immediately
-    if (!(await User.canRecoveryBeInitiated(username))) {
+    if (!(await this.canRecoveryBeInitiated())) {
       return false;
     }
 
-    const { phone, recCode } = await User.createDbRecoveryEntry(username);
+    const { phone, recCode } = await this.createDbRecoveryEntry();
 
     // send recoveryCode to SMS - running async is fine (send via Twilio)
     sendSmsMessage(
@@ -484,10 +434,10 @@ class User {
    * @param {string} username
    * @return {Promise <{ username, code, createdat }>}}
    */
-  static async getRecoveryCodeInfo(username) {
+  async getRecoveryCodeInfo() {
     const result = await db.query(
       'SELECT * FROM recovery WHERE username = $1',
-      [username]
+      [this.username]
     );
 
     // check if recovery info exists in recovery database
@@ -502,36 +452,19 @@ class User {
   }
 
   /** @description checkRecoveryTimeValidity - Verifies Recovery Time Expiration
-   * @param {string} username
    * @param {date} createdTime
    * @return {Promise <boolean>}}
    */
-  static async checkRecoveryTimeValidity(username, createdTime) {
+  async checkRecoveryTimeValidity(createdTime) {
     const currentTime = new Date();
     const timeDifferenceInMins = (currentTime - createdTime) / 1000 / 60;
 
     // check if more than RECCODE_EXP_IN_MINS minutes has elapsed (Code has expired)
     if (timeDifferenceInMins > RECCODE_EXP_IN_MINS) {
       // code has expired - delete old recovery entry
-      await db.query('DELETE FROM recovery WHERE username = $1', [username]);
-      throw new APIError(
-        'Recovery information is invalid.',
-        400,
-        'Recovery failed'
-      );
-    }
-
-    return true;
-  }
-
-  /** @description checkRecoveryCodeValidity - Verifies RecoveryCode
-   * @param {string} inputCode
-   * @param {string} recoveryHashedCode
-   * @return {Promise <boolean>}}
-   */
-  static async checkRecoveryCodeValidity(inputCode, recoveryHashedCode) {
-    const isValid = await bcrypt.compare(inputCode, recoveryHashedCode);
-    if (!isValid) {
+      await db.query('DELETE FROM recovery WHERE username = $1', [
+        this.username
+      ]);
       throw new APIError(
         'Recovery information is invalid.',
         400,
@@ -542,28 +475,27 @@ class User {
   }
 
   /** @description resetPassword - reset user password with code (Req Twilio)
-   * @param {string} username
    * @param {string} code
    * @param {string} password
    * @return {Promise <boolean>}}
    */
-  static async resetPassword(username, inputCode, newPassword) {
+  async resetPassword(inputCode, newPassword) {
     // obtain recovery info, if does not exist, throw error
-    const recInfo = await User.getRecoveryCodeInfo(username);
+    const recInfo = await this.getRecoveryCodeInfo();
 
     // check if recovery time has not expired, else throw error
     const createdTime = recInfo.createdat;
-    await User.checkRecoveryTimeValidity(username, createdTime);
+    await this.checkRecoveryTimeValidity(createdTime);
 
     // check if inputCode is correct, else throw error
     const recoveryHashedCode = recInfo.code;
-    await User.checkRecoveryCodeValidity(inputCode, recoveryHashedCode);
+    await checkRecoveryCodeValidity(inputCode, recoveryHashedCode);
 
     // code is valid, update password and delete recovery info
-    await User.patchUser(username, {
+    await this.patchUser({
       password: newPassword
     });
-    await db.query('DELETE FROM recovery WHERE username = $1', [username]);
+    await db.query('DELETE FROM recovery WHERE username = $1', [this.username]);
     return true;
   }
 }

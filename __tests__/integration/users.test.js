@@ -29,7 +29,8 @@ beforeEach(async () => {
   await User.addUser({
     username: 'bob',
     name: 'Bobby',
-    password: '123456'
+    password: '123456',
+    phone: '14151231234'
   });
 
   await User.addUser({
@@ -69,7 +70,9 @@ beforeEach(async () => {
   // add first story to username jas favorites
   const stories = await Story.getStories({});
   const storyId = stories[0].storyId;
-  await User.addFavorite('jas', storyId);
+
+  const userJas = await User.getUser('jas');
+  await userJas.addFavorite(storyId);
 
   // setup authTokens for convenience
   bobToken = jwt.sign({ username: 'bob' }, SECRET_KEY);
@@ -346,7 +349,8 @@ describe('POST /users/:username/favorites/:storyId', async () => {
 
 describe('DELETE /users/:username/favorites/:storyId', async () => {
   it('Deleting story from user favorites succeeded', async () => {
-    const stories = await User.getUserFavorites('jas');
+    const userJas = await User.getUser('jas');
+    const stories = await userJas.getUserFavorites();
     const storyId = stories[0].storyId;
 
     const response = await request(app)
@@ -421,6 +425,65 @@ describe('POST /users/:username/recovery', async () => {
       'message',
       "SMS recovery for user: 'jas' acknowledged."
     );
+  });
+});
+
+describe('PATCH /users/:username/recovery', async () => {
+  it('suceeded with recovery request', async () => {
+    // create entry and get recCode
+    const user = await User.getUser('bob');
+    const result = await user.createDbRecoveryEntry();
+    const { recCode } = result;
+    const response = await request(app)
+      .patch('/users/bob/recovery')
+      .send({
+        user: {
+          code: recCode,
+          password: '654321'
+        }
+      });
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toHaveProperty(
+      'message',
+      'Successfully updated password.'
+    );
+    const isValid = await User.checkValidCreds('bob', '654321');
+    expect(isValid).toBe(true);
+  });
+
+  it('failed due to bad code', async () => {
+    // create entry and get recCode
+    const user = await User.getUser('bob');
+    const result = await user.createDbRecoveryEntry();
+    const { recCode } = result;
+    const response = await request(app)
+      .patch('/users/bob/recovery')
+      .send({
+        user: {
+          code: '000000',
+          password: '654321'
+        }
+      });
+
+    const { error } = response.body;
+    expect(error.status).toBe(400);
+    expect(error).toHaveProperty('title', 'Recovery failed');
+  });
+
+  it('failed due to bad input params', async () => {
+    const response = await request(app)
+      .patch('/users/bob/recovery')
+      .send({
+        user: {
+          code: '000000',
+          password: '654321',
+          cookies: 'yummy'
+        }
+      });
+
+    const { error } = response.body;
+    expect(error.status).toBe(400);
+    expect(error).toHaveProperty('title', 'Bad Request');
   });
 });
 
