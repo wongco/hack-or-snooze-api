@@ -16,13 +16,22 @@ const { STORIES_LIST_LIMIT } = require('../config');
 /** Story on the site */
 
 class Story {
+  constructor({ title, url, author, username, storyId, createdAt, updatedAt }) {
+    this.title = title;
+    this.url = url;
+    this.author = author;
+    this.username = username;
+    this.storyId = storyId;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
+  }
   /** addStory - adds new story to db
    * @property {object} story
    * @property {string} story.username
    * @property {string} story.title
    * @property {string} story.author
    * @property {string} story.url
-   * @return { Promise <{ storyId, title, author, url, createdAt, updatedAt, username }>}
+   * @return { Promise <Story({ storyId, title, author, url, createdAt, updatedAt, username })>}
    */
   static async addStory({ username, title, author, url }) {
     const result = await db.query(
@@ -34,22 +43,22 @@ class Story {
     const story = result.rows[0];
 
     // deconstruct data for formatting
-    const { createdat, updatedat, storyId, ...storyDetails } = story;
+    const { createdat, updatedat, storyid, ...storyDetails } = story;
 
     // return formatted JS object
-    return {
+    return new Story({
       ...storyDetails,
-      storyId,
+      storyId: storyid,
       createdAt: createdat,
       updatedAt: updatedat
-    };
+    });
   }
 
   /** getStories - gets all stories in db filtered by criteria.
    * @property {object} reqDetails (optional properties below)
    * @property {integer} reqDetails.skip
    * @property {integer} reqDetails.limit
-   * @return { Promise <[ { storyId, title, author, url, createdAt, updatedAt, username }, ... ]>}
+   * @return { Promise <[ Story({ storyId, title, author, url, createdAt, updatedAt, username }), ... ]>}
    */
   static async getStories(reqDetails) {
     // validates skip and limit, throws error if invalid
@@ -64,12 +73,12 @@ class Story {
     // rename columns to match formatted output
     const stories = result.rows.map(storyDbDetail => {
       const { createdat, updatedat, storyid, ...userDetails } = storyDbDetail;
-      return {
+      return new Story({
         ...userDetails,
         storyId: storyid,
         createdAt: createdat,
         updatedAt: updatedat
-      };
+      });
     });
 
     return stories;
@@ -97,7 +106,7 @@ class Story {
 
   /** getStory - get a specific story's info formatted nicely for JSON resp.
    * @param {interger} storyId
-   * @return { Promise <{ storyId, title, author, url, createdAt, updatedAt, username }>}
+   * @return { Promise <Story({ storyId, title, author, url, createdAt, updatedAt, username })>}
    */
   static async getStory(storyId) {
     // check if story exists and get story Info
@@ -106,57 +115,43 @@ class Story {
     // deconstruct data for camelCase formatting
     const { createdat, updatedat, storyid, ...userDetails } = story;
 
-    return {
+    return new Story({
       ...userDetails,
       storyId: storyid,
       createdAt: createdat,
       updatedAt: updatedat
-    };
+    });
   }
 
   /** patchStory - update a specific story's info JSON resp.
-   * @param {interger} storyId
    * @property {object} storyDetails (at least one property below)
    * @property {string} storyDetails.author
    * @property {string} storyDetails.title
    * @property {string} storyDetails.url
-   * @return { Promise <{ storyId, title, author, url, createdAt, updatedAt, username }>}
    */
-  static async patchStory(storyId, storyUpdateDetails) {
-    // check if story exists, else throw error
-    await Story.getStoryDbInfo(storyId);
-
+  async patchStory(storyUpdateDetails) {
     // add timestamp to be updated
-    storyUpdateDetails.updatedat = new Date();
+    storyUpdateDetails.updatedAt = new Date();
+
+    // update local story instance
+    for (let key in storyUpdateDetails) {
+      this[key] = storyUpdateDetails[key];
+    }
 
     // generate sql commands for update
     const { query, values } = sqlForPartialUpdate(
       'stories',
       storyUpdateDetails,
       'storyid',
-      storyId
+      this.storyId
     );
-
     // update database
     await db.query(query, values);
-
-    // get updated userDetails
-    const story = await Story.getStory(storyId);
-    return story;
   }
 
-  /** deleteStory - update a specific story's info JSON resp.
-   * @param {interger} storyId
-   * @return { Promise <{ storyId, title, author, url, createdAt, updatedAt, username }>}
-   */
-  static async deleteStory(storyId) {
-    // check if story exists, else throw error
-    await Story.getStoryDbInfo(storyId);
-
-    // grab story details before deleting
-    const story = await Story.getStory(storyId);
-    await db.query('DELETE FROM stories WHERE storyid = $1', [storyId]);
-    return story;
+  /** deleteStory - update a specific story's info JSON resp. */
+  async deleteStory() {
+    await db.query('DELETE FROM stories WHERE storyid = $1', [this.storyId]);
   }
 }
 

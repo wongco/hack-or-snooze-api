@@ -199,7 +199,7 @@ class User {
     );
 
     // rename columns to match formatted output
-    const users = result.rows.map(userPublicDetail => {
+    const publicUsers = result.rows.map(userPublicDetail => {
       const { createdat, updatedat, ...userDetails } = userPublicDetail;
       return {
         ...userDetails,
@@ -208,7 +208,7 @@ class User {
       };
     });
 
-    return users;
+    return publicUsers;
   }
 
   /** @description patchUser - updates user instance in database
@@ -218,22 +218,24 @@ class User {
    * @property {string} rawUpdate.phone
    */
   async patchUser(rawUpdate) {
-    if (rawUpdate.name) {
-      this.name = rawUpdate.name;
-    }
-
-    // if phone number was passed, validate, convert to E.164
-    if (rawUpdate.phone) {
-      this.phone = formatPhoneNumber(rawUpdate.phone);
-    }
-
+    // update updatedAt filed for db arg and instance
     let cleanUpdate = {
-      name: this.name,
-      phone: this.phone,
       updatedat: new Date()
     };
+    this.updatedAt = cleanUpdate.updatedat;
 
-    // if password change is req, hash and add to cleanUpdate
+    // if updated name was passed update db arg and instance
+    if (rawUpdate.name) {
+      this.name = rawUpdate.name;
+      cleanUpdate.name = rawUpdate.name;
+    }
+
+    // convert phone to E.164 for update in db
+    if (rawUpdate.phone) {
+      cleanUpdate.phone = formatPhoneNumber(rawUpdate.phone);
+    }
+
+    // hash password for update in db
     if (rawUpdate.password) {
       const hashPassword = await bcrypt.hash(
         rawUpdate.password,
@@ -272,13 +274,12 @@ class User {
     // map & deconstruct data for camelCase formatting
     const stories = dbStories.rows.map(dbStory => {
       const { createdat, updatedat, storyid, ...userDetails } = dbStory;
-      // TODO, convert to instances of Story
-      return {
+      return new Story({
         ...userDetails,
         storyId: storyid,
         createdAt: createdat,
         updatedAt: updatedat
-      };
+      });
     });
 
     return stories;
@@ -300,14 +301,12 @@ class User {
     // map & deconstruct data for camelCase formatting
     const stories = dbStories.rows.map(dbStory => {
       const { createdat, updatedat, storyid, ...userDetails } = dbStory;
-
-      // TODO make in story Instances
-      return {
+      return new Story({
         ...userDetails,
         storyId: storyid,
         createdAt: createdat,
         updatedAt: updatedat
-      };
+      });
     });
 
     return stories;

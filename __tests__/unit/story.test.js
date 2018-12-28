@@ -190,7 +190,8 @@ describe('patchStory method', async () => {
     const stories = await Story.getStories({});
     const storyId = stories[stories.length - 1].storyId;
 
-    const story = await Story.patchStory(storyId, {
+    const story = await Story.getStory(storyId);
+    await story.patchStory({
       title: 'How to eat cookies well!.',
       url: 'http://www.goodcookies.com/updated',
       author: 'Bobby-O'
@@ -201,20 +202,13 @@ describe('patchStory method', async () => {
     expect(story).toHaveProperty('storyId', storyId);
   });
 
-  it('failed due to non-existing storyId', async () => {
-    try {
-      await Story.getStory(-1);
-    } catch (error) {
-      expect(error).toHaveProperty('title', 'Story Not Found');
-    }
-  });
-
   it('failed due to invalid parameters storyId', async () => {
     try {
       const stories = await Story.getStories({});
       const storyId = stories[0].storyId;
 
-      await Story.patchStory(storyId, {
+      const story = await Story.getStory(storyId);
+      await story.patchStory({
         title: 'How to eat cookies well!.',
         url: 'http://www.goodcookies.com/updated',
         author: 'Bobby-O',
@@ -234,16 +228,17 @@ describe('deleteStory method', async () => {
     const stories = await Story.getStories({});
     const storyId = stories[stories.length - 1].storyId;
 
-    const story = await Story.deleteStory(storyId);
+    const story = await Story.getStory(storyId);
+
+    await story.deleteStory();
 
     expect(story).toHaveProperty('username', 'bob');
     expect(story).toHaveProperty('title', 'How to eat cookies.');
     expect(story).toHaveProperty('storyId', storyId);
-  });
 
-  it('failed due to non-exisiting storyId', async () => {
+    // check that story no long exists
     try {
-      await Story.deleteStory(100000);
+      await Story.getStory(storyId);
     } catch (error) {
       expect(error).toHaveProperty('title', 'Story Not Found');
     }

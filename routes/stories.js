@@ -116,7 +116,9 @@ router.patch(
 
     try {
       const { storyId } = req.params;
-      const story = await Story.patchStory(storyId, req.body.story);
+      const story = await Story.getStory(storyId);
+
+      await story.patchStory(req.body.story);
       return res.json({ story });
     } catch (error) {
       return next(error);
@@ -138,7 +140,9 @@ router.delete(
   async (req, res, next) => {
     try {
       const { storyId } = req.params;
-      const story = await Story.deleteStory(storyId);
+      const story = await Story.getStory(storyId);
+
+      await story.deleteStory();
       return res.json({
         message: `Story with ID '${storyId}' successfully deleted.`,
         story
