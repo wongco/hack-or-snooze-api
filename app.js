@@ -1,6 +1,7 @@
 /** Express app for hack-or-snooze-API */
 const express = require('express');
 const app = express();
+const helmet = require('helmet');
 const validHTTPMethods = require('./helpers/validHTTPMethods');
 
 // don't provide http logging during automated tests
@@ -21,6 +22,9 @@ const storiesRoutes = require('./routes/stories');
 // middleware for parsing req.body and json
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// enable header protection using helmet
+app.use(helmet());
 
 // routing control
 app.use('/', authRoutes);
