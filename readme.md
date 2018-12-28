@@ -49,29 +49,29 @@ You will need to have the following items installed in order to run this program
 
 3. Install the postgresql schema tables onto your database.
 
-	- (Note, any of the steps below will reset and drop your existing tables)
+   - (Note, any of the steps below will reset and drop your existing tables)
 
-  For production database:
+For production database:
 
-  ```
-  psql hack-or-snooze < data.sql
-  ```
+```
+psql hack-or-snooze < data.sql
+```
 
-  For test database:
+For test database:
 
-  ```
-  psql hack-or-snooze-test < data.sql
-  ```
+```
+psql hack-or-snooze-test < data.sql
+```
 
-  If you want to load sample data on your database, run the following command:
+If you want to load sample data on your database, run the following command:
 
-  ```
-  npm run dbrefresh
-  ```
+```
+npm run dbrefresh
+```
 
 4. (Optional) - Twilio SMS Recovery Routes are unavailable unless a .env file or environmental variables are set with the appropriate Twilio Account Keys. Please see the config.js file for reference. Sign up at Twilio for a trial account to test them out.
 
-	[https://www.twilio.com](https://www.twilio.com)
+   [https://www.twilio.com](https://www.twilio.com)
 
 ## Running Tests
 
@@ -106,6 +106,7 @@ You will need to have the following items installed in order to run this program
 
 ## Built With
 
+- twilio - Programmable SMS - (Account Signup Required)
 - Node.js - Server Language
 - express.js - Node Web Framework
 - PostgreSQL - SQL Database
@@ -116,7 +117,7 @@ You will need to have the following items installed in order to run this program
 - cors - Cross Origin Resource Sharing Library
 - pg - PostgreSQL client for Node.js
 - phone - Phone Number Validation Library
-- twilio - Programmable SMS - (Account Signup Required)
+- helmet - HTTP Header Protection
 
 Testing stack:
 

@@ -76,6 +76,7 @@ class User {
 
     // if phone number was passed, validate, convert to E.164
     if (phone) {
+      // validates phone input, or sets to blank if invalid
       phone = formatPhoneNumber(phone);
     }
 
