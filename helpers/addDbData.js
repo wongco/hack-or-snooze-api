@@ -5,9 +5,9 @@ const db = require('../db');
 const User = require('../models/User');
 
 // fake data creation amount
-const USER_COUNT = 5;
-const TOTAL_STORIES = 25;
+const USER_COUNT = 25;
 const FAVORITES_PER_USER = 3;
+const TOTAL_STORIES = USER_COUNT * FAVORITES_PER_USER;
 
 // control function to clean up db and add new data
 async function setUp() {
