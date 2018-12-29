@@ -191,25 +191,38 @@ describe('getUsers method', async () => {
 describe('patchUser method', async () => {
   it('successfully updates user information', async () => {
     const user = await User.getUser('bob');
+    const story = user.stories[0];
+    // check author before change
+    expect(story).toHaveProperty('author', 'Bobby');
+
     await user.patchUser({
-      name: 'bobby',
+      name: 'bobbbbbb',
       password: 'abcdef'
     });
 
     expect(user).toHaveProperty('username', 'bob');
-    expect(user).toHaveProperty('name', 'bobby');
+    expect(user).toHaveProperty('name', 'bobbbbbb');
     expect(user).not.toHaveProperty('password');
+    // check author after change
+    expect(story).toHaveProperty('author', 'bobbbbbb');
   });
 
   it('successfully update partial user information', async () => {
     const user = await User.getUser('bob');
+    const story = user.stories[0];
+
+    // check author before change
+    expect(story).toHaveProperty('author', 'Bobby');
+
     await user.patchUser({
-      name: 'bobby'
+      name: 'jobby'
     });
 
     expect(user).toHaveProperty('username', 'bob');
-    expect(user).toHaveProperty('name', 'bobby');
+    expect(user).toHaveProperty('name', 'jobby');
     expect(user).not.toHaveProperty('password');
+    // check author after change
+    expect(story).toHaveProperty('author', 'jobby');
   });
 });
 

@@ -255,6 +255,33 @@ class User {
 
     // update database
     await db.query(query, values);
+
+    // if name was updated, update all messages of author
+    if (rawUpdate.name) {
+      // update author name in db
+      await this.updateAuthoredStories();
+    }
+  }
+
+  /** @description updateAuthoredStories - updates user instance in database */
+  async updateAuthoredStories() {
+    // update author name in db
+    await db.query(
+      'UPDATE stories SET author = $1, updatedat = $2 WHERE username = $3',
+      [this.name, new Date(), this.username]
+    );
+
+    // update user instance stories to reflect updated author name
+    this.stories.map(story => {
+      story.author = this.name;
+    });
+
+    // update user instance favorites to reflect updated author name
+    this.favorites.map(story => {
+      if (story.username === this.username) {
+        story.author = this.name;
+      }
+    });
   }
 
   /** @description deleteUser - deletes user instance in database */

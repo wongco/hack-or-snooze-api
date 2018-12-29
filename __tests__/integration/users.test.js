@@ -174,6 +174,9 @@ describe('PATCH /users/:username', async () => {
     expect(user).toHaveProperty('username', 'bob');
     expect(user).toHaveProperty('name', 'bobbobman');
     expect(user).toHaveProperty('favorites');
+
+    const story = user.stories[0];
+    expect(story).toHaveProperty('author', 'bobbobman');
   });
 
   it('Updating partial user details succeeded', async () => {
@@ -191,6 +194,9 @@ describe('PATCH /users/:username', async () => {
     expect(user).toHaveProperty('username', 'bob');
     expect(user).toHaveProperty('name', 'bobbobman');
     expect(user).toHaveProperty('favorites');
+
+    const story = user.stories[0];
+    expect(story).toHaveProperty('author', 'bobbobman');
   });
 
   it('Failed to update other user details (not authorized)', async () => {
