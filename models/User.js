@@ -295,7 +295,7 @@ class User {
    */
   async getUserOwnStories() {
     const dbStories = await db.query(
-      'SELECT * FROM stories where username = $1',
+      'SELECT * FROM stories where username = $1 ORDER BY createdat DESC',
       [this.username]
     );
 
@@ -322,7 +322,8 @@ class User {
        FROM favorites as f
        JOIN stories as s
        ON f.storyid = s.storyid
-       WHERE f.username = $1`,
+       WHERE f.username = $1
+       ORDER BY createdat DESC`,
       [this.username]
     );
 
