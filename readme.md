@@ -1,6 +1,6 @@
 # hack-or-snooze-api
 
-Hack-or-snooze-api is a RESTful API backend for a story/message posting board built in node, express & postgresql.
+Hack-or-snooze-api is a RESTful API backend for a story/message posting board built in Node, Express & PostgreSQL.
 
 ## Prerequisites
 
@@ -35,7 +35,21 @@ You will need to have the following items installed in order to run this program
    npm install
    ```
 
-2. Use a global install of nodemon or start the program by running server.js
+2. Create database instances as referenced above
+
+   - Production database
+
+   ```
+   createdb hack-or-snooze
+   ```
+
+   - (Optional - Test database)
+
+   ```
+   createdb hack-or-snooze-test
+   ```
+
+3. Use a global install of nodemon or start the program by running server.js
 
    ```
    nodemon server.js
@@ -47,29 +61,29 @@ You will need to have the following items installed in order to run this program
    node server.js
    ```
 
-3. Install the postgresql schema tables onto your database.
+4. Install the postgresql schema tables onto your database.
 
-   - (Note, any of the steps below will reset and drop your existing tables)
+   - (**Note, any of the steps below will reset and drop your existing tables**)
 
-For production database:
+	For production database:
+	
+	```
+	psql hack-or-snooze < data.sql
+	```
+	
+	For test database:
+	
+	```
+	psql hack-or-snooze-test < data.sql
+	```
+	
+	If you want to load sample data on your database, run the following command:
 
-```
-psql hack-or-snooze < data.sql
-```
+	```
+	npm run dbrefresh
+	```
 
-For test database:
-
-```
-psql hack-or-snooze-test < data.sql
-```
-
-If you want to load sample data on your database, run the following command:
-
-```
-npm run dbrefresh
-```
-
-4. (Optional) - Twilio SMS Recovery Routes are unavailable unless a .env file or environmental variables are set with the appropriate Twilio Account Keys. Please see the config.js file for reference. Sign up at Twilio for a trial account to test them out.
+5. (Optional) - Twilio SMS Recovery Routes are unavailable unless a .env file or environmental variables are set with the appropriate Twilio Account Keys. Please see the config.js file for reference. Sign up at Twilio for a trial account to test them out.
 
    [https://www.twilio.com](https://www.twilio.com)
 
