@@ -6,91 +6,92 @@ Hack-or-snooze-api is a RESTful API backend for a story/message posting board bu
 
 You will need to have the following items installed in order to run this program:
 
-1. Install Node.js and npm
+1. Install Node.js to gain access to npm
 2. Install PostgreSQL
-3. Create databases for application
+3. Create the following SQL databases for the application
 
-- hack-or-snooze
-- hack-or-snooze-test (if you want to run the tests)
+   `hack-or-snooze`
+
+   `hack-or-snooze-test` (if you want to run the tests)
 
 ## Getting Started
 
-1. Fork or clone the repo, and run npm install. package.json has all required dependencies.
+### 1. **Fork or clone the repo, and run npm install. package.json has all required dependencies.**
 
-   - only production packages
+- If you want to install only production packages
 
-   ```
-   npm install --production
-   ```
+  ```
+  npm install --production
+  ```
 
-   - only dev packages
+- If you want to install only dev packages
 
-   ```
-   npm install --only=dev
-   ```
+  ```
+  npm install --only=dev
+  ```
 
-   - Install Everything
+- Install Everything (recommended)
 
-   ```
-   npm install
-   ```
+  ```
+  npm install
+  ```
 
-2. Create database instances as referenced above
+### 2. **Create database instances as referenced above**
 
-   - Production database
+- Production database
 
-   ```
-   createdb hack-or-snooze
-   ```
+  ```
+  createdb hack-or-snooze
+  ```
 
-   - (Optional - Test database)
+- (Optional - Test database)
 
-   ```
-   createdb hack-or-snooze-test
-   ```
+  ```
+  createdb hack-or-snooze-test
+  ```
 
-3. Use a global install of nodemon or start the program by running server.js
+### 3. **Install the postgresql schema tables onto your database.**
 
-   ```
-   nodemon server.js
-   ```
+**WARNING, any of the steps below will reset and drop your existing tables**
 
-   or
+For production database:
 
-   ```
-   node server.js
-   ```
+```
+psql hack-or-snooze < data.sql
+```
 
-4. Install the postgresql schema tables onto your database.
+For test database:
 
-   - (**Note, any of the steps below will reset and drop your existing tables**)
+```
+psql hack-or-snooze-test < data.sql
+```
 
-	For production database:
-	
-	```
-	psql hack-or-snooze < data.sql
-	```
-	
-	For test database:
-	
-	```
-	psql hack-or-snooze-test < data.sql
-	```
-	
-	If you want to load sample data on your database, run the following command:
+If you want to load sample data on your database, run the following command:
 
-	```
-	npm run dbrefresh
-	```
+```
+npm run dbrefresh
+```
 
-5. (Optional) - Twilio SMS Recovery Routes are unavailable unless a .env file or environmental variables are set with the appropriate Twilio Account Keys. Please see the config.js file for reference. Sign up at Twilio for a trial account to test them out.
+### 4. Use a global install of nodemon or start the program by running server.js
 
-   [https://www.twilio.com](https://www.twilio.com)
+```
+nodemon server.js
+```
+
+or
+
+```
+node server.js
+```
+
+### 5. (Optional) - Twilio SMS Recovery Routes are unavailable unless a .env file or environmental variables are set with the appropriate Twilio Account Keys. Please see the config.js file for reference. Sign up at Twilio for a trial account to test the feature out.
+
+[https://www.twilio.com](https://www.twilio.com)
 
 ## Running Tests
 
-- In the root folder, run:
-  `npm test`
+In the root folder, run:
+`npm test`
 
 ## Routes Reference
 
@@ -142,4 +143,4 @@ Testing stack:
 
 ## Author
 
-- WongCo - https://github.com/wongco
+WongCo - https://github.com/wongco
