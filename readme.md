@@ -54,35 +54,36 @@ You will need to have the following items installed in order to run this program
 
 **WARNING, any of the steps below will reset and drop your existing tables**
 
-For production database:
+- For production database:
 
-```
-psql hack-or-snooze < data.sql
-```
+  ```
+  psql hack-or-snooze < data.sql
+  ```
 
-For test database:
+- For test database:
 
-```
-psql hack-or-snooze-test < data.sql
-```
+  ```
+  psql hack-or-snooze-test < data.sql
+  ```
 
-If you want to load sample data on your database, run the following command:
+- If you want to load sample data on your database, run the following command:
 
-```
-npm run dbrefresh
-```
+  ```
+  npm run dbrefresh
+  ```
 
 ### 4. Use a global install of nodemon or start the program by running server.js
 
-```
-nodemon server.js
-```
+- Monitored (Auto-refresh on code change)
 
-or
+  ```
+  nodemon server.js
+  ```
 
-```
-node server.js
-```
+- Regular Node Executable
+  ```
+  node server.js
+  ```
 
 ### 5. (Optional) - Twilio SMS Recovery Routes are unavailable unless a .env file or environmental variables are set with the appropriate Twilio Account Keys. Please see the config.js file for reference. Sign up at Twilio for a trial account to test the feature out.
 
